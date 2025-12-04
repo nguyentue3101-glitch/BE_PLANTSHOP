@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.backendplantshop.mapper.ProductMapper">
+    <resultMap id="ProductResultMap" type="com.example.backendplantshop.entity.Products">
+        <id column="product_id" property="product_id"/>
+        <result column="product_name" property="product_name"/>
+        <result column="description" property="description"/>
+        <result column="img_url" property="img_url"/>
+        <result column="price" property="price"/>
+        <result column="quantity" property="quantity"/>
+        <result column="size" property="size"/>
+        <result column="out_of_stock" property="out_of_stock"/>
+        <result column="created_at" property="created_at"/>
+        <result column="updated_at" property="updated_at"/>
+        <result column="is_deleted" property="is_deleted"/>
+        <result column="category_id" property="category_id"/>
+    </resultMap>
+    <!-- Các phần tử SQL-->
+
+    <select id="findById" resultMap="ProductResultMap" parameterType="integer">
+        SELECT *
+        FROM products
+        WHERE product_id = #{productID}
+          AND is_deleted = 0
+    </select>
+
+
+<!--     kiểm tra trùng bản ghi-->
+    <select id="findByProductName_Size_Category" resultMap="ProductResultMap">
+        SELECT *
+        FROM products
+        WHERE product_name = #{productName}
+          AND size = #{size}
+          AND category_id = #{categoryId}
+        ORDER BY is_deleted DESC
+        LIMIT 1
+    </select>
+
+    <select id="getAll" resultMap="ProductResultMap">
+        SELECT *
+        FROM products
+        WHERE is_deleted = 0
+    </select>
+
+    <select id="getAllProductDeleted" resultMap="ProductResultMap">
+        SELECT *
+        FROM products
+        WHERE is_deleted = 1
+    </select>
+
+    <insert id="insert" parameterType="Products">
+        INSERT INTO products(
+                              product_name
+                            ,description
+                            ,img_url
+                            ,price
+                            ,quantity
+                            ,size
+                            ,category_id
+        )
+        VALUES (
+                 #{product_name}
+               ,#{description}
+               ,#{img_url}
+               ,#{price}
+               ,#{quantity}
+               ,#{size}
+               ,#{category_id}
+               )
+    </insert>
+
+    <update id="update" parameterType="Products">
+        UPDATE products
+        SET product_name = #{product_name},
+            description = #{description},
+            img_url = #{img_url},
+            price = #{price},
+            quantity = #{quantity},
+            size = #{size},
+            out_of_stock = #{out_of_stock},
+            category_id = #{category_id},
+            is_deleted = #{is_deleted}
+        WHERE product_id = #{product_id}
+    </update>
+
+
+    <delete id="delete" parameterType="int">
+        UPDATE products
+        SET is_deleted = 1
+        WHERE product_id = #{productID}
+    </delete>
+
+
+
+    <select id="findByIdDeleted" resultMap="ProductResultMap" parameterType="integer">
+        SELECT *
+        FROM products
+        WHERE product_id = #{productID}
+          AND is_deleted = 1
+    </select>
+    <update id="restoreProduct" parameterType="int">
+        UPDATE products
+        SET is_deleted = 0,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE product_id = #{productID}
+        AND is_deleted = 1
+    </update>
+
+
+<!--    update số lượng trong giỏ hàng (trừ số lượng mua)-->
+    <update id="updateProductQuantity">
+        UPDATE products
+        SET quantity = quantity - #{quantity},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE product_id = #{productID}
+        AND is_deleted = 0
+    </update>
+
+<!--    restore số lượng sản phẩm (cộng lại số lượng khi hủy đơn)-->
+    <update id="restoreProductQuantity">
+        UPDATE products
+        SET quantity = quantity + #{quantity},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE product_id = #{productID}
+        AND is_deleted = 0
+    </update>
+
+</mapper>

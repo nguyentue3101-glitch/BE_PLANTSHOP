@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.backendplantshop.mapper.OrderMapper">
+    <resultMap id="OrderResultMap" type="Orders">
+        <id column="order_id" property="order_id"/>
+        <result column="total" property="total"/>
+        <result column="discount_amount" property="discount_amount"/>
+        <result column="final_total" property="final_total"/>
+        <result column="order_date" property="order_date"/>
+        <result column="status" property="status" javaType="com.example.backendplantshop.enums.OrderSatus"/>
+        <result column="shipping_status" property="shipping_status" javaType="com.example.backendplantshop.enums.ShippingStatus"/>
+        <result column="created_at" property="created_at"/>
+        <result column="updated_at" property="updated_at"/>
+        <result column="user_id" property="user_id"/>
+        <result column="discount_id" property="discount_id"/>
+        <result column="shipping_name" property="shipping_name"/>
+        <result column="shipping_address" property="shipping_address"/>
+        <result column="shipping_phone" property="shipping_phone"/>
+        <result column="is_deleted" property="is_deleted"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="Orders" useGeneratedKeys="true" keyProperty="order_id">
+        INSERT INTO orders (total,
+                            discount_amount,
+                            final_total,
+                            order_date,
+                            status,
+                            shipping_status,
+                            created_at,
+                            updated_at,
+                            user_id,
+                            discount_id,
+                            shipping_name,
+                            shipping_address,
+                            shipping_phone,
+                            is_deleted)
+        VALUES (#{total},
+                #{discount_amount},
+                #{final_total},
+                #{order_date},
+                #{status},
+                #{shipping_status},
+                #{created_at},
+                #{updated_at},
+                #{user_id},
+                #{discount_id},
+                #{shipping_name},
+                #{shipping_address},
+                #{shipping_phone},
+                #{is_deleted})
+    </insert>
+
+    <select id="findById" parameterType="int" resultMap="OrderResultMap">
+        SELECT *
+        FROM orders
+        WHERE order_id = #{orderID}
+        AND is_deleted = 0
+    </select>
+
+
+<!--    tìm đơn của user-->
+    <select id="findByUserId" parameterType="int" resultMap="OrderResultMap">
+        SELECT *
+        FROM orders
+        WHERE user_id = #{userID}
+        AND is_deleted = 0
+        ORDER BY order_date DESC
+    </select>
+
+<!--    lấy  tất cả cho admin qly-->
+    <select id="getAll" resultMap="OrderResultMap">
+        SELECT *
+        FROM orders
+        WHERE is_deleted = 0
+        ORDER BY order_date DESC
+    </select>
+
+    <update id="update" parameterType="Orders">
+        UPDATE orders
+        SET total = #{total},
+            discount_amount = #{discount_amount},
+            final_total = #{final_total},
+            order_date = #{order_date},
+            status = #{status},
+            shipping_status = #{shipping_status},
+            updated_at = #{updated_at},
+            user_id = #{user_id},
+            discount_id = #{discount_id},
+            shipping_name = #{shipping_name},
+            shipping_address = #{shipping_address},
+            shipping_phone = #{shipping_phone}
+        WHERE order_id = #{order_id}
+    </update>
+
+<!--    <update id="updateShippingInfo">-->
+<!--        UPDATE orders-->
+<!--        SET shipping_name = #{shippingName},-->
+<!--            shipping_address = #{shippingAddress},-->
+<!--            shipping_phone = #{shippingPhone},-->
+<!--            updated_at = NOW()-->
+<!--        WHERE order_id = #{orderId}-->
+<!--    </update>-->
+
+    <update id="delete" parameterType="int">
+        UPDATE orders
+        SET is_deleted = 1
+        WHERE order_id = #{orderID}
+    </update>
+
+    <!-- Statistics by date -->
+    <select id="getStatisticsByDate" resultType="com.example.backendplantshop.dto.response.OrderStatisticsDtoResponse">
+        SELECT 
+            COALESCE(SUM(o.final_total), 0) as totalRevenue,
+            COUNT(*) as totalOrders,
+            COUNT(*) as completedOrders,
+            0 as cancelledOrders,
+            CASE
+                WHEN COUNT(*) > 0
+                    THEN COALESCE(SUM(o.final_total), 0) / COUNT(*)
+                ELSE 0 
+            END as averageOrderValue
+        FROM orders o
+        WHERE o.is_deleted = 0
+        AND o.status = 'CONFIRMED'
+        AND o.shipping_status = 'DELIVERED'
+        AND EXISTS (
+            SELECT 1 
+            FROM payment p 
+            WHERE p.order_id = o.order_id 
+            AND p.is_deleted = 0 
+            AND p.status = 'SUCCESS'
+        )
+        AND YEAR(o.order_date) = #{year}
+        AND MONTH(o.order_date) = #{month}
+        AND DAY(o.order_date) = #{day}
+    </select>
+
+    <!-- Statistics by month -->
+    <select id="getStatisticsByMonth" resultType="com.example.backendplantshop.dto.response.OrderStatisticsDtoResponse">
+        SELECT 
+            COALESCE(SUM(o.final_total), 0) as totalRevenue,
+            COUNT(*) as totalOrders,
+            COUNT(*) as completedOrders,
+            0 as cancelledOrders,
+            CASE
+                WHEN COUNT(*) > 0 THEN COALESCE(SUM(o.final_total), 0) / COUNT(*)
+                ELSE 0 
+            END as averageOrderValue
+        FROM orders o
+        WHERE o.is_deleted = 0
+        AND o.status = 'CONFIRMED'
+        AND o.shipping_status = 'DELIVERED'
+        AND EXISTS (
+            SELECT 1 
+            FROM payment p 
+            WHERE p.order_id = o.order_id 
+            AND p.is_deleted = 0 
+            AND p.status = 'SUCCESS'
+        )
+        AND YEAR(o.order_date) = #{year}
+        AND MONTH(o.order_date) = #{month}
+    </select>
+
+    <!-- Statistics by year -->
+    <select id="getStatisticsByYear" resultType="com.example.backendplantshop.dto.response.OrderStatisticsDtoResponse">
+        SELECT 
+            COALESCE(SUM(o.final_total), 0) as totalRevenue,
+            COUNT(*) as totalOrders,
+            COUNT(*) as completedOrders,
+            0 as cancelledOrders,
+            CASE
+                WHEN COUNT(*) > 0 THEN COALESCE(SUM(o.final_total), 0) / COUNT(*)
+                ELSE 0 
+            END as averageOrderValue
+        FROM orders o
+        WHERE o.is_deleted = 0
+        AND o.status = 'CONFIRMED'
+        AND o.shipping_status = 'DELIVERED'
+        AND EXISTS (
+            SELECT 1 
+            FROM payment p 
+            WHERE p.order_id = o.order_id 
+            AND p.is_deleted = 0 
+            AND p.status = 'SUCCESS'
+        )
+        AND YEAR(o.order_date) = #{year}
+    </select>
+</mapper>
+

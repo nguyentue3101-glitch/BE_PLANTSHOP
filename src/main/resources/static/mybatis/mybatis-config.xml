@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <typeAliases>
+        <typeAlias type="com.example.backendplantshop.entity.Category" alias="Category"/>
+        <typeAlias type="com.example.backendplantshop.entity.Products" alias="Products"/>
+        <typeAlias type="com.example.backendplantshop.entity.Discounts" alias="Discounts"/>
+        <typeAlias type="com.example.backendplantshop.entity.Users" alias="Users"/>
+        <typeAlias type="com.example.backendplantshop.entity.Carts" alias="Carts"/>
+        <typeAlias type="com.example.backendplantshop.entity.CartDetails" alias="CartDetails"/>
+        <typeAlias type="com.example.backendplantshop.entity.UserTokens" alias="UserTokens"/>
+        <typeAlias type="com.example.backendplantshop.entity.Orders" alias="Orders"/>
+        <typeAlias type="com.example.backendplantshop.entity.OrderDetails" alias="OrderDetail"/>
+        <typeAlias type="com.example.backendplantshop.entity.Payment" alias="Payment"/>
+        <typeAlias type="com.example.backendplantshop.entity.PaymentMethod" alias="PaymentMethod"/>
+        <typeAlias type="com.example.backendplantshop.entity.ProductReview" alias="ProductReview"/>
+        <typeAlias type="com.example.backendplantshop.entity.EmailOtp" alias="EmailOtp"/>
+        <typeAlias type="com.example.backendplantshop.entity.Deposit" alias="Deposit"/>
+    </typeAliases>
+</configuration>

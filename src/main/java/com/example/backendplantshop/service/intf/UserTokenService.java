@@ -1,0 +1,13 @@
+package com.example.backendplantshop.service.intf;
+
+import com.example.backendplantshop.entity.UserTokens;
+
+import java.util.List;
+
+public interface UserTokenService {
+    void saveToken(UserTokens token);
+    UserTokens revokeTokensByUser(int userId);
+//    UserTokens findById(int tokenId);
+    UserTokens findTokenByUser(Integer userId);
+
+}

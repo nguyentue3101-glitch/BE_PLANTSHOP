@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.backendplantshop.mapper.OrderDetailMapper">
+    <resultMap id="OrderDetailResultMap" type="OrderDetail">
+        <id column="order_detail_id" property="order_detail_id"/>
+        <result column="quantity" property="quantity"/>
+        <result column="price_at_order" property="price_at_order"/>
+        <result column="sub_total" property="sub_total"/>
+        <result column="note" property="note"/>
+        <result column="created_at" property="created_at"/>
+        <result column="updated_at" property="updated_at"/>
+        <result column="product_id" property="product_id"/>
+        <result column="order_id" property="order_id"/>
+        <result column="is_deleted" property="is_deleted"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="OrderDetail" useGeneratedKeys="true" keyProperty="order_detail_id">
+        INSERT INTO order_details (quantity,
+                                   price_at_order,
+                                   sub_total, note,
+                                   created_at,
+                                   updated_at,
+                                   product_id,
+                                   order_id,
+                                   is_deleted)
+        VALUES (#{quantity},
+                #{price_at_order},
+                #{sub_total},
+                #{note},
+                #{created_at},
+                #{updated_at},
+                #{product_id},
+                #{order_id},
+                #{is_deleted})
+    </insert>
+
+    <select id="findById" parameterType="int" resultMap="OrderDetailResultMap">
+        SELECT *
+        FROM order_details
+        WHERE order_detail_id = #{orderDetailID}
+        AND is_deleted = 0
+    </select>
+
+    <select id="findByOrderId" parameterType="int" resultMap="OrderDetailResultMap">
+        SELECT *
+        FROM order_details
+        WHERE order_id = #{orderID}
+        AND is_deleted = 0
+    </select>
+
+    <update id="update" parameterType="OrderDetail">
+        UPDATE order_details
+        SET quantity = #{quantity},
+            price_at_order = #{price_at_order},
+            sub_total = #{sub_total},
+            note = #{note},
+            updated_at = #{updated_at},
+            product_id = #{product_id},
+            order_id = #{order_id}
+        WHERE order_detail_id = #{order_detail_id}
+    </update>
+
+    <update id="delete" parameterType="int">
+        UPDATE order_details
+        SET is_deleted = 1
+        WHERE order_detail_id = #{orderDetailID}
+    </update>
+
+    <update id="deleteByOrderId" parameterType="int">
+        UPDATE order_details
+        SET is_deleted = 1
+        WHERE order_id = #{orderID}
+    </update>
+
+<!--    đếm sản phẩm có đang trong đơn hàng nào ko-->
+    <select id="countActiveOrderDetailsByProductId" resultType="int" parameterType="int">
+        SELECT COUNT(1)
+        FROM order_details
+        WHERE product_id = #{productID}
+          AND is_deleted = 0
+    </select>
+
+    <!-- Tổng số sản phẩm bán được theo tháng -->
+    <select id="getTotalProductsSoldByMonth" resultType="int">
+        SELECT COALESCE(SUM(od.quantity), 0) as totalQuantitySold
+        FROM order_details od
+        INNER JOIN orders o ON od.order_id = o.order_id
+        WHERE od.is_deleted = 0
+        AND o.is_deleted = 0
+        AND o.status = 'CONFIRMED'
+        AND o.shipping_status = 'DELIVERED'
+        AND EXISTS (
+            SELECT 1 
+            FROM payment pay 
+            WHERE pay.order_id = o.order_id 
+            AND pay.is_deleted = 0 
+            AND pay.status = 'SUCCESS'
+        )
+        AND YEAR(o.order_date) = #{year}
+        AND MONTH(o.order_date) = #{month}
+    </select>
+
+    <!-- Tổng số sản phẩm bán được theo năm -->
+    <select id="getTotalProductsSoldByYear" resultType="int">
+        SELECT COALESCE(SUM(od.quantity), 0) as totalQuantitySold
+        FROM order_details od
+        INNER JOIN orders o ON od.order_id = o.order_id
+        WHERE od.is_deleted = 0
+        AND o.is_deleted = 0
+        AND o.status = 'CONFIRMED'
+        AND o.shipping_status = 'DELIVERED'
+        AND EXISTS (
+            SELECT 1 
+            FROM payment pay 
+            WHERE pay.order_id = o.order_id 
+            AND pay.is_deleted = 0 
+            AND pay.status = 'SUCCESS'
+        )
+        AND YEAR(o.order_date) = #{year}
+    </select>
+
+    <!-- Top products by date -->
+<!--    distinct loại bỏ các giá trị trùng lặp-->
+<!--    INNER JOIN chỉ trả về những dòng cả 2 bảng khớp-->
+<!--    <select id="getTopProductsByDate" resultType="map">-->
+<!--        SELECT -->
+<!--            od.product_id,-->
+<!--            p.product_name,-->
+<!--            p.img_url,-->
+<!--            SUM(od.quantity) as totalQuantitySold,-->
+<!--            SUM(od.sub_total) as totalRevenue,-->
+<!--            COUNT(DISTINCT od.order_id) as orderCount-->
+<!--        FROM order_details od-->
+<!--        INNER JOIN orders o ON od.order_id = o.order_id-->
+<!--        INNER JOIN products p ON od.product_id = p.product_id-->
+<!--        WHERE od.is_deleted = 0-->
+<!--        AND o.is_deleted = 0-->
+<!--        AND o.status = 'CONFIRMED'-->
+<!--        AND o.shipping_status = 'DELIVERED'-->
+<!--        AND EXISTS (-->
+<!--            SELECT 1 -->
+<!--            FROM payment pay -->
+<!--            WHERE pay.order_id = o.order_id -->
+<!--            AND pay.is_deleted = 0 -->
+<!--            AND pay.status = 'SUCCESS'-->
+<!--        )-->
+<!--        AND YEAR(o.order_date) = #{year}-->
+<!--        AND MONTH(o.order_date) = #{month}-->
+<!--        AND DAY(o.order_date) = #{day}-->
+<!--        GROUP BY od.product_id, p.product_name, p.img_url-->
+<!--        ORDER BY totalQuantitySold DESC-->
+<!--        LIMIT #{limit}-->
+<!--    </select>-->
+
+<!--    &lt;!&ndash; Top products by month &ndash;&gt;-->
+<!--    <select id="getTopProductsByMonth" resultType="map">-->
+<!--        SELECT -->
+<!--            od.product_id,-->
+<!--            p.product_name,-->
+<!--            p.img_url,-->
+<!--            SUM(od.quantity) as totalQuantitySold,-->
+<!--            SUM(od.sub_total) as totalRevenue,-->
+<!--            COUNT(DISTINCT od.order_id) as orderCount-->
+<!--        FROM order_details od-->
+<!--        INNER JOIN orders o ON od.order_id = o.order_id-->
+<!--        INNER JOIN products p ON od.product_id = p.product_id-->
+<!--        WHERE od.is_deleted = 0-->
+<!--        AND o.is_deleted = 0-->
+<!--        AND o.status = 'CONFIRMED'-->
+<!--        AND o.shipping_status = 'DELIVERED'-->
+<!--        AND EXISTS (-->
+<!--            SELECT 1 -->
+<!--            FROM payment pay -->
+<!--            WHERE pay.order_id = o.order_id -->
+<!--            AND pay.is_deleted = 0 -->
+<!--            AND pay.status = 'SUCCESS'-->
+<!--        )-->
+<!--        AND YEAR(o.order_date) = #{year}-->
+<!--        AND MONTH(o.order_date) = #{month}-->
+<!--        GROUP BY od.product_id, p.product_name, p.img_url-->
+<!--        ORDER BY totalQuantitySold DESC-->
+<!--        LIMIT #{limit}-->
+<!--    </select>-->
+
+<!--    &lt;!&ndash; Top products by year &ndash;&gt;-->
+<!--    <select id="getTopProductsByYear" resultType="map">-->
+<!--        SELECT -->
+<!--            od.product_id,-->
+<!--            p.product_name,-->
+<!--            p.img_url,-->
+<!--            SUM(od.quantity) as totalQuantitySold,-->
+<!--            SUM(od.sub_total) as totalRevenue,-->
+<!--            COUNT(DISTINCT od.order_id) as orderCount-->
+<!--        FROM order_details od-->
+<!--        INNER JOIN orders o ON od.order_id = o.order_id-->
+<!--        INNER JOIN products p ON od.product_id = p.product_id-->
+<!--        WHERE od.is_deleted = 0-->
+<!--        AND o.is_deleted = 0-->
+<!--        AND o.status = 'CONFIRMED'-->
+<!--        AND o.shipping_status = 'DELIVERED'-->
+<!--        AND EXISTS (-->
+<!--            SELECT 1 -->
+<!--            FROM payment pay -->
+<!--            WHERE pay.order_id = o.order_id -->
+<!--            AND pay.is_deleted = 0 -->
+<!--            AND pay.status = 'SUCCESS'-->
+<!--        )-->
+<!--        AND YEAR(o.order_date) = #{year}-->
+<!--        GROUP BY od.product_id, p.product_name, p.img_url-->
+<!--        ORDER BY totalQuantitySold DESC-->
+<!--        LIMIT #{limit}-->
+<!--    </select>-->
+</mapper>
+
