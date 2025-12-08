@@ -22,7 +22,8 @@ public interface OrderDetailMapper {
 //    List<Map<String, Object>> getTopProductsByMonth(@Param("year") int year, @Param("month") int month, @Param("limit") int limit);
 //    List<Map<String, Object>> getTopProductsByYear(@Param("year") int year, @Param("limit") int limit);
 
-    int countActiveOrderDetailsByProductId(@Param("productID") int productId);
+//    int countActiveOrderDetailsByProductId(@Param("productID") int productId);
+    List<Integer> findOrderIdsByProductId(@Param("productID") int productId);
     
     // Statistics methods - Total products sold
     Integer getTotalProductsSoldByMonth(@Param("year") int year, @Param("month") int month);

@@ -2,10 +2,14 @@ package com.example.backendplantshop.service.impl;
 
 import com.example.backendplantshop.dto.request.products.ProductDtoRequest;
 import com.example.backendplantshop.dto.response.ProductDtoResponse;
+import com.example.backendplantshop.entity.Orders;
 import com.example.backendplantshop.entity.Products;
 import com.example.backendplantshop.entity.Users;
 import com.example.backendplantshop.enums.ErrorCode;
+import com.example.backendplantshop.enums.OrderSatus;
+import com.example.backendplantshop.enums.ShippingStatus;
 import com.example.backendplantshop.exception.AppException;
+import com.example.backendplantshop.mapper.OrderMapper;
 import com.example.backendplantshop.mapper.ProductMapper;
 import com.example.backendplantshop.mapper.CategoryMapper;
 import com.example.backendplantshop.mapper.OrderDetailMapper;
@@ -13,6 +17,7 @@ import com.example.backendplantshop.convert.ProductConvert;
 import com.example.backendplantshop.service.intf.ProductService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +35,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryMapper categoryMapper;
     private final CategoryServiceImpl categoryServiceImpl;
     private final OrderDetailMapper orderDetailMapper;
+    private final OrderMapper orderMapper;
 
 
     public ProductDtoResponse findProductById(int id){
@@ -166,14 +172,23 @@ public class ProductServiceImpl implements ProductService {
         if(productMapper.findById(id)==null){
             throw new AppException(ErrorCode.PRODUCT_NOT_EXISTS);
         }
-
-//        kiểm tra sp có đang tồn tại trong đơn hàng nào ko
-        int activeOrderCount = orderDetailMapper.countActiveOrderDetailsByProductId(id);
-        if (activeOrderCount > 0) {
-            throw new AppException(ErrorCode.PRODUCT_IN_ORDER_NOT_DELETABLE);
+        
+        // Kiểm tra sản phẩm có tồn tại trong đơn hàng nào không
+        List<Integer> orderIds = orderDetailMapper.findOrderIdsByProductId(id);
+        
+        if (!orderIds.isEmpty()) {
+            // Kiểm tra ShippingStatus của tất cả đơn hàng chứa sản phẩm này
+            for (Integer orderId : orderIds) {
+                Orders order = orderMapper.findById(orderId);
+                if (order != null && order.getShipping_status() != ShippingStatus.DELIVERED) {
+                    throw new AppException(ErrorCode.PRODUCT_IN_ORDER_NOT_DELETABLE);
+                }
+            }
         }
+        
         productMapper.delete(id);
     }
+
 
     private String processImage(MultipartFile image, String defaultImgUrl) {
         if (image != null && !image.isEmpty()) {

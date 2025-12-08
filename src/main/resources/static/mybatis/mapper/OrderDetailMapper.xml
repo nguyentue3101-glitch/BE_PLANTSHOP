@@ -76,8 +76,16 @@
     </update>
 
 <!--    đếm sản phẩm có đang trong đơn hàng nào ko-->
-    <select id="countActiveOrderDetailsByProductId" resultType="int" parameterType="int">
-        SELECT COUNT(1)
+<!--    <select id="countActiveOrderDetailsByProductId" resultType="int" parameterType="int">-->
+<!--        SELECT COUNT(1)-->
+<!--        FROM order_details-->
+<!--        WHERE product_id = #{productID}-->
+<!--          AND is_deleted = 0-->
+<!--    </select>-->
+
+<!--    lấy danh sách order_id chứa sản phẩm này-->
+    <select id="findOrderIdsByProductId" resultType="int" parameterType="int">
+        SELECT DISTINCT order_id
         FROM order_details
         WHERE product_id = #{productID}
           AND is_deleted = 0
