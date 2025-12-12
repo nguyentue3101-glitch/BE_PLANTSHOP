@@ -21,6 +21,7 @@ public class ProductConvert {
                 .size(product.getSize())
                 .out_of_stock(product.isOut_of_stock())
                 .category_id(product.getCategory_id())
+                .is_deleted(product.is_deleted())
                 .build();
     }
 

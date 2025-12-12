@@ -86,18 +86,18 @@ public class AuthServiceImpl implements AuthenticationService {
             throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
         }
 
-        // Làm sạch dữ liệu: nếu email hoặc phone_number là chuỗi rỗng hoặc chỉ chứa khoảng trắng thì gán null
+        // Làm sạch dữ liệu: nếu email  là chuỗi rỗng hoặc chỉ chứa khoảng trắng thì gán null
         registerDtoRequest.setEmail(clean(registerDtoRequest.getEmail()));
 
         // Xác thực OTP trước khi đăng ký
         if (registerDtoRequest.getOtpCode() == null || registerDtoRequest.getOtpCode().trim().isEmpty()) {
             throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
         }
-        
         boolean isOtpValid = otpService.verifyOtp(registerDtoRequest.getEmail(), registerDtoRequest.getOtpCode());
         if (!isOtpValid) {
             throw new AppException(ErrorCode.INVALID_OTP);
         }
+
 
         // Kiểm tra email
         Users existingUserByEmail = userMapper.findByEmailIgnoreDeleted(registerDtoRequest.getEmail());
@@ -115,6 +115,7 @@ public class AuthServiceImpl implements AuthenticationService {
         if (userMapper.findByUsername(registerDtoRequest.getUsername()) != null) {
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
+
 
         Users users = UserConvert.convertResigterDtoRequestToUsers(registerDtoRequest, passwordEncoder);
         userMapper.insert(users);
@@ -135,6 +136,7 @@ public class AuthServiceImpl implements AuthenticationService {
             throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
         }
 
+
         // Validate các trường bắt buộc
         if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
             throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
@@ -147,17 +149,24 @@ public class AuthServiceImpl implements AuthenticationService {
         }
 
         // Validate độ dài password
-        if (request.getPassword().length() < 8 || request.getPassword().length() > 20) {
-            throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
-        }
+//        if (request.getPassword().length() < 8 || request.getPassword().length() > 20) {
+//            throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
+//        }
 
         String email = clean(request.getEmail());
         String username = clean(request.getUsername());
 
         // Kiểm tra email đã được đăng ký chưa
         Users existingUserByEmail = userMapper.findByEmailIgnoreDeleted(email);
-        if (existingUserByEmail != null && (existingUserByEmail.getIs_deleted() == null || !existingUserByEmail.getIs_deleted())) {
-            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        if (existingUserByEmail != null) {
+            // Nếu user đã tồn tại và chưa bị xóa
+            if (existingUserByEmail.getIs_deleted() == null || !existingUserByEmail.getIs_deleted()) {
+                throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+            }
+            // Nếu user đã tồn tại nhưng đã bị xóa mềm
+            if (existingUserByEmail.getIs_deleted() == true) {
+                throw new AppException(ErrorCode.ACCOUNT_DISABLED);
+            }
         }
 
         // Kiểm tra username đã tồn tại chưa
@@ -186,14 +195,14 @@ public class AuthServiceImpl implements AuthenticationService {
         }
 
 
-        // Tìm user theo email hoặc phone
+        // Tìm user theo email
         Users users = null;
         if (loginDtoRequest.getEmail() != null && !loginDtoRequest.getEmail().trim().isEmpty()) {
             users = userMapper.findByEmail(loginDtoRequest.getEmail());
         }
 
         if (users == null) {
-            throw new AppException(ErrorCode.USER_NOT_EXISTS);
+            throw new AppException(ErrorCode.INVALID_CREDENTIALS);
         }
 
         // Kiểm tra password
@@ -338,8 +347,11 @@ public class AuthServiceImpl implements AuthenticationService {
         
         // Kiểm tra email PHẢI TỒN TẠI
         Users existingUser = userMapper.findByEmailIgnoreDeleted(email);
-        if (existingUser == null || (existingUser.getIs_deleted() != null && existingUser.getIs_deleted())) {
+        if (existingUser == null) {
             throw new AppException(ErrorCode.USER_NOT_EXISTS);
+        }
+        if( existingUser.getIs_deleted() == true){
+            throw new AppException(ErrorCode.ACCOUNT_DISABLED);
         }
 
         // Gửi OTP với user_id (vì user đã tồn tại)
@@ -366,13 +378,13 @@ public class AuthServiceImpl implements AuthenticationService {
         }
 
         // Xác thực OTP
-        boolean isOtpValid = otpService.verifyOtp(email, request.getOtpCode());
-        if (!isOtpValid) {
-            log.warn("OTP không hợp lệ cho email: {} với OTP: {}", email, request.getOtpCode());
-            throw new AppException(ErrorCode.INVALID_OTP);
-        }
+//        boolean isOtpValid = otpService.verifyOtp(request.getEmail(), request.getOtpCode());
+//        if (!isOtpValid) {
+//            log.warn("OTP không hợp lệ cho email: {} với OTP: {}", email, request.getOtpCode());
+//            throw new AppException(ErrorCode.INVALID_OTP);
+//        }
         
-        log.info("OTP đã được verify thành công cho email: {}, đang tiến hành reset password", email);
+//        log.info("OTP đã được verify thành công cho email: {}, đang tiến hành reset password", email);
 
         // Cập nhật mật khẩu
         updateUserPassword(user.getUser_id(), request.getNewPassword());
@@ -383,7 +395,6 @@ public class AuthServiceImpl implements AuthenticationService {
             log.info("Đã mark OTP đã sử dụng cho email: {}", email);
         } catch (Exception e) {
             log.warn("Không thể mark OTP cho email {}: {}", email, e.getMessage());
-            // Không throw exception vì password đã được reset thành công
         }
         
         log.info("User ID: {} đã reset mật khẩu bằng OTP thành công", user.getUser_id());

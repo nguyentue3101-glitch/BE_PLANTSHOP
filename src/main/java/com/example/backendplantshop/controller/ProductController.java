@@ -1,5 +1,6 @@
 package com.example.backendplantshop.controller;
 
+import com.cloudinary.Api;
 import com.example.backendplantshop.dto.request.products.ProductDtoRequest;
 import com.example.backendplantshop.dto.response.ApiResponse;
 import com.example.backendplantshop.dto.response.ProductDtoResponse;
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.multipart.MultipartFile;
 
 
@@ -24,6 +26,8 @@ public class ProductController {
 
     @Autowired
     private ObjectMapper objectMapper; //tạo đối tượng dể chuyển json -> Object jva
+    @Autowired
+    private RestClient.Builder builder;
 
     @GetMapping("/getall")
     public ApiResponse<List<ProductDtoResponse>> goGetAllProduct() {
@@ -52,6 +56,16 @@ public class ProductController {
                 .success(Boolean.TRUE)
                 .message(ErrorCode.CALL_API_SUCCESSFULL.getMessage())
                 .data(productService.findProductById(id))
+                .build();
+    }
+
+    @GetMapping("/get-product-by-id-deleted/{id}")
+    public ApiResponse<ProductDtoResponse> doGetProductByIdDeleted(@PathVariable("id") int id) {
+        return ApiResponse.<ProductDtoResponse>builder()
+                .statusCode(ErrorCode.CALL_API_SUCCESSFULL.getCode())
+                .success(Boolean.TRUE)
+                .message(ErrorCode.CALL_API_SUCCESSFULL.getMessage())
+                .data(productService.findProductByIdDeleted(id))
                 .build();
     }
 

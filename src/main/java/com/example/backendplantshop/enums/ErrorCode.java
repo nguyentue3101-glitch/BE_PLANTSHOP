@@ -27,12 +27,12 @@ public enum ErrorCode {
 
     MISSING_REQUIRED_FIELD(1004, "không được để trống"),
     EMAIL_ALREADY_EXISTS(1003, "email đã được đăng ký"),
-    EMAIL_DISABLED_NEED_RESTORE(1003, "user với email này đã bị vô hiệu hóa, hãy khôi phục lại"),
+    EMAIL_DISABLED_NEED_RESTORE(1003, "user với email này đã bị vô hiệu hóa"),
     PHONE_ALREADY_EXISTS(1003, "số điện thoại đã được đăng ký"),
     USERNAME_ALREADY_EXISTS(1003, "username đã tồn tại"),
 
-    USER_NOT_EXISTS(1002, "user không tồn tại"),
-    INVALID_CREDENTIALS(401, "mật khẩu không đúng"),
+    USER_NOT_EXISTS(1002, "người dùng chưa đăng ký"),
+    INVALID_CREDENTIALS(401, "email hoặc mật khẩu không đúng"),
     ACCOUNT_DISABLED(403, "tài khoản của bạn đã bị vô hiệu hóa"),
     INVALID_OTP(403, "Mã OTP không hợp lệ hoặc đã hết hạn. Vui lòng thử lại"),
 

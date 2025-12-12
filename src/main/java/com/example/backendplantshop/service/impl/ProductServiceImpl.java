@@ -46,6 +46,14 @@ public class ProductServiceImpl implements ProductService {
         return ProductConvert.convertToProductDtoResponse(product);
     }
 
+    public ProductDtoResponse findProductByIdDeleted(int id){
+        var product = productMapper.findByIdDeleted(id);
+        if(product == null){
+            throw  new AppException(ErrorCode.PRODUCT_NOT_EXISTS);
+        }
+        return ProductConvert.convertToProductDtoResponse(product);
+    }
+
     public List<ProductDtoResponse> getAllProducts(){
         var products = ProductConvert.convertListProductToListProductDtoResponse(productMapper.getAll());
         if(products.isEmpty()){

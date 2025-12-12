@@ -21,4 +21,5 @@ public class ProductDtoResponse {
     private String size;
     private Boolean out_of_stock;
     private int category_id;
+    private Boolean is_deleted;
 }

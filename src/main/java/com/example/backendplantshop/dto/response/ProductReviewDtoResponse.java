@@ -21,6 +21,7 @@ public class ProductReviewDtoResponse {
     private int user_id;
     private UserDtoResponse user; // Thông tin user đầy đủ
     private ProductDtoResponse product;
+    private Boolean is_deleted;
     private LocalDateTime created_at;
     private LocalDateTime updated_at;
 }

@@ -28,15 +28,15 @@ public class OtpServiceImpl implements OtpService {
     //tạo otp cho đăng ký vì ban đầu đk userid sẽ là null
     @Override
     @Transactional
-    public String generateAndSendOtp(String email) {
-        return generateAndSendOtp(email, null);
+    public void generateAndSendOtp(String email) {
+        generateAndSendOtp(email, null);
     }
 
 
     //hàm tạo và gửi otp
     @Override
     @Transactional
-    public String generateAndSendOtp(String email, Integer userId) {
+    public void generateAndSendOtp(String email, Integer userId) {
         // Tạo mã OTP ngẫu nhiên 6 chữ số
         String otpCode = generateOtp();
         
@@ -61,7 +61,7 @@ public class OtpServiceImpl implements OtpService {
         emailService.sendOtpEmail(email, otpCode);
         
         log.info("Đã tạo và gửi OTP cho email: {} với user_id: {}", email, userId);
-        return otpCode;
+        // KHÔNG return OTP code vì lý do bảo mật - OTP chỉ nên có trong email
     }
 
     @Override
@@ -69,12 +69,12 @@ public class OtpServiceImpl implements OtpService {
     public boolean verifyOtp(String email, String otpCode) {
         // Chỉ verify OTP, KHÔNG mark as used
         // OTP sẽ được mark as used sau khi reset password/register thành công
-        // Tìm OTP với otp_code chính xác
+        // Tìm OTP với email và otp_code
         EmailOtp emailOtp = emailOtpMapper.findByEmailAndOtp(email, otpCode);
         
         if (emailOtp == null) {
             log.warn("OTP không hợp lệ hoặc đã hết hạn cho email: {} với OTP: {}", email, otpCode);
-            return false;
+            throw new AppException(ErrorCode.INVALID_OTP);
         }
         
         log.info("Đã xác thực OTP thành công cho email: {} với OTP ID: {} (chưa mark as used)", email, emailOtp.getOtp_id());

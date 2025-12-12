@@ -448,16 +448,18 @@ public class OrderServiceImpl implements OrderService {
                 }
                 
                 // Nếu đã thanh toán thành công, cần hoàn tiền trước khi hủy
+                // KHÔNG set payment status thành FAILED vì đã thanh toán thành công
+                // Payment status sẽ giữ nguyên SUCCESS, chỉ cần hoàn tiền qua MoMo Refund API
                 if (currentPaymentStatus == PaymentStatus.SUCCESS) {
                     log.warn("Đơn hàng {} đã thanh toán thành công, cần hoàn tiền MoMo trước khi hủy", orderId);
                     log.warn("LƯU Ý: Cần gọi MoMo Refund API với transId từ callback để hoàn tiền cho khách hàng");
-                    log.warn("Sau khi hoàn tiền thành công, payment status sẽ được cập nhật thành FAILED");
+                    log.warn("Payment status sẽ giữ nguyên SUCCESS (không đổi thành FAILED) vì đã thanh toán thành công");
                     // TODO: Implement MoMo refund API call here nếu cần tự động hoàn tiền
+                } else {
+                    // Chỉ set payment status thành FAILED nếu chưa thanh toán thành công
+                    paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.FAILED);
+                    log.info("Đã cập nhật tất cả payments của order {} thành FAILED khi hủy đơn (chưa thanh toán thành công)", orderId);
                 }
-                
-                // Cập nhật payment status thành FAILED khi hủy đơn
-                paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.FAILED);
-                log.info("Đã cập nhật tất cả payments của order {} thành FAILED khi hủy đơn", orderId);
                 
                 // Cập nhật shipping status thành UNDELIVERED khi hủy đơn
                 if (order.getShipping_status() != ShippingStatus.UNDELIVERED) {
@@ -761,15 +763,22 @@ public class OrderServiceImpl implements OrderService {
         if (callbackRequest.getResultCode() != null && callbackRequest.getResultCode() == 0) {
             try {
                 if (orderId != null) {
+                    // Cập nhật payment status thành SUCCESS
                     paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.SUCCESS);
-                    UpdateOrderStatusDtoRequest statusRequest = UpdateOrderStatusDtoRequest.builder()
-                                    .status(OrderSatus.CONFIRMED)
-                                    .build();
-                    updateOrderStatus(orderId, statusRequest);
-                    log.info("Đã cập nhật trạng thái đơn hàng {} thành công sau khi thanh toán", orderId);
+                    
+                    // Đảm bảo trạng thái đơn hàng là PENDING_CONFIRMATION sau khi thanh toán thành công
+                    Orders order = orderMapper.findById(orderId);
+                    if (order != null && order.getStatus() != OrderSatus.PENDING_CONFIRMATION) {
+                        order.setStatus(OrderSatus.PENDING_CONFIRMATION);
+                        order.setUpdated_at(LocalDateTime.now());
+                        orderMapper.update(order);
+                        log.info("Đã cập nhật trạng thái đơn hàng {} thành PENDING_CONFIRMATION sau khi thanh toán MoMo thành công", orderId);
+                    }
+                    
+                    log.info("Đã cập nhật payment status thành SUCCESS và order status thành PENDING_CONFIRMATION cho đơn hàng {} sau khi thanh toán MoMo thành công", orderId);
                 }
             } catch (Exception e) {
-                log.error("Lỗi khi cập nhật trạng thái đơn hàng từ callback: {}", e.getMessage(), e);
+                log.error("Lỗi khi cập nhật payment và order status từ callback: {}", e.getMessage(), e);
             }
         } else {
             log.warn("Thanh toán thất bại: orderId={}, message={}",

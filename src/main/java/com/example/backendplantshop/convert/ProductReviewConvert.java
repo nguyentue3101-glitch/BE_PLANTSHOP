@@ -35,6 +35,7 @@ public class ProductReviewConvert {
                 .product_id(review.getProduct_id())
                 .order_detail_id(review.getOrder_detail_id())
                 .user_id(review.getUser_id())
+                .is_deleted(review.getIs_deleted())
                 .created_at(review.getCreated_at())
                 .updated_at(review.getUpdated_at())
                 .build();

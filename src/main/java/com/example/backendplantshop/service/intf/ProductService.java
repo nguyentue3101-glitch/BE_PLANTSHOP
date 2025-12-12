@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ProductService {
     ProductDtoResponse findProductById(int id);
+    ProductDtoResponse findProductByIdDeleted(int id);
     List<ProductDtoResponse> getAllProducts();
     void insert(ProductDtoRequest productRequest, MultipartFile image) throws IOException;
     void update(int id, ProductDtoRequest productRequest, MultipartFile image) throws IOException;

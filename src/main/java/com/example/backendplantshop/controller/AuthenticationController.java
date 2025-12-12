@@ -95,12 +95,10 @@ public class AuthenticationController {
 
     @PostMapping("/verify-otp")
     ApiResponse<Boolean> verifyOtp(@Valid @RequestBody VerifyOtpDtoRequest request) {
-        boolean isValid = authenticationService.verifyOtp(request);
         return ApiResponse.<Boolean>builder()
                 .statusCode(ErrorCode.CALL_API_SUCCESSFULL.getCode())
                 .success(Boolean.TRUE)
-                .message(isValid ? "Xác thực OTP thành công" : "Mã OTP không hợp lệ hoặc đã hết hạn")
-                .data(isValid)
+                .message(authenticationService.verifyOtp(request) ? "Xác thực OTP thành công" : "Mã OTP không hợp lệ hoặc đã hết hạn")
                 .build();
     }
 
@@ -128,7 +126,7 @@ public class AuthenticationController {
         return ApiResponse.<Void>builder()
                 .statusCode(ErrorCode.CHANGEPASSWORD_SUCCESSFULL.getCode())
                 .success(Boolean.TRUE)
-                .message("Đặt lại mật khẩu thành công")
+                .message(ErrorCode.CHANGEPASSWORD_SUCCESSFULL.getMessage())
                 .build();
     }
 }
