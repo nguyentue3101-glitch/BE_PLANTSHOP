@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -79,9 +80,13 @@ public class ProductServiceImpl implements ProductService {
         if (productRequest.getPrice() == null) {
             throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
         }
-        
+
+        if(productRequest.getPrice().compareTo(BigDecimal.ZERO)<0){
+            throw new AppException(ErrorCode.PRICE_GREATER_THAN_0);
+        }
+
         if (productRequest.getQuantity() < 0) {
-            throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
+            throw new AppException(ErrorCode.QUANTITY_GREATER_THAN_0);
         }
         
         // Kiểm tra danh mục có được điền không
@@ -148,6 +153,7 @@ public class ProductServiceImpl implements ProductService {
         productRequest.setCategory_id(productRequest.getCategory_id());
 
 
+
         // Kiểm tra danh mục tồn tại
         if (categoryServiceImpl.findById(productRequest.getCategory_id()) == null) {
             throw new AppException(ErrorCode.CATEGORY_NOT_EXISTS);
@@ -158,6 +164,14 @@ public class ProductServiceImpl implements ProductService {
         Products duplicate = productMapper.findByProductName_Size_Category(productRequest.getProduct_name(), productRequest.getSize(), productRequest.getCategory_id());
         if (duplicate != null && duplicate.getProduct_id() != id) {
             throw new AppException(ErrorCode.PRODUCT_ALREADY_EXISTS);
+        }
+
+        if(productRequest.getPrice().compareTo(BigDecimal.ZERO)<0){
+            throw new AppException(ErrorCode.PRICE_GREATER_THAN_0);
+        }
+
+        if (productRequest.getQuantity() < 0) {
+            throw new AppException(ErrorCode.QUANTITY_GREATER_THAN_0);
         }
 
         // Xử lý ảnh

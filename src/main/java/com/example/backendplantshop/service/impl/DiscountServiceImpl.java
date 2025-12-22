@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -91,6 +92,14 @@ public class DiscountServiceImpl implements DiscountService {
                 return;
             }
         }
+
+        if (discountRequest.getValue().compareTo(BigDecimal.ZERO)<0){
+            throw new AppException(ErrorCode.VALID_GREATER_THAN_0);
+        }
+
+        if(discountRequest.getQuantity() <0){
+            throw  new AppException(ErrorCode.QUANTITY_GREATER_THAN_0);
+        }
         
         // Nếu không tìm thấy discount nào
         log.info("Không tìm thấy discount trùng, sẽ tạo mới: code='{}', name='{}'", 
@@ -125,6 +134,14 @@ public class DiscountServiceImpl implements DiscountService {
             if (existingByName.getIs_deleted() == null || !existingByName.getIs_deleted()) {
                 throw new AppException(ErrorCode.DISCOUNT_ALREADY_EXISTS);
             }
+        }
+
+        if (discountRequest.getValue().compareTo(BigDecimal.ZERO)<0){
+            throw new AppException(ErrorCode.VALID_GREATER_THAN_0);
+        }
+
+        if(discountRequest.getQuantity() <0){
+            throw  new AppException(ErrorCode.QUANTITY_GREATER_THAN_0);
         }
 
 

@@ -1,5 +1,6 @@
 package com.example.backendplantshop.dto.request.products;
 
+import jakarta.validation.constraints.DecimalMin;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

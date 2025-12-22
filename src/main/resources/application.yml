@@ -71,6 +71,17 @@ momo:
   # Ngôn ngữ mặc định là tiếng Việt
   lang: ${MOMO_LANG:vi}
 
+vnpay:
+  tmn-code: ${VNPAY_TMN_CODE}
+  hash-secret: ${VNPAY_HASH_SECRET}
+  url: ${VNPAY_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  return-url: ${VNPAY_RETURN_URL:http://localhost:1234/api/payments/vnpay/return}
+  ipn-url: ${VNPAY_IPN_URL:http://localhost:1234/api/payments/vnpay/callback}
+  version: ${VNPAY_VERSION:2.1.0}
+  command: ${VNPAY_COMMAND:pay}
+  curr-code: ${VNPAY_CURR_CODE:VND}
+  locale: ${VNPAY_LOCALE:vn}
+
 mybatis:
   #link đến file config xml
   config-location: classpath:/static/mybatis/mybatis-config.xml

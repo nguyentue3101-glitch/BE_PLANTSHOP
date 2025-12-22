@@ -42,6 +42,7 @@
         WHERE deposit_id = #{depositID}
     </select>
 
+<!--    //Lấy deposit mới nhất của order-->
     <select id="findLatestByOrderId" parameterType="int" resultMap="DepositResultMap">
         SELECT *
         FROM deposit

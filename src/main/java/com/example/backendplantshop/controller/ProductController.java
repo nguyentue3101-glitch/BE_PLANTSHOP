@@ -7,6 +7,7 @@ import com.example.backendplantshop.dto.response.ProductDtoResponse;
 import com.example.backendplantshop.enums.ErrorCode;
 import com.example.backendplantshop.service.intf.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
