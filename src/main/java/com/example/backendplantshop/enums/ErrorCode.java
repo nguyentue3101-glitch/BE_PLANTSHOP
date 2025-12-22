@@ -48,6 +48,10 @@ public enum ErrorCode {
 //    ======================================================================
 // ErrorCode.java
 
+    QUANTITY_GREATER_THAN_0(1000,"số lượng không được âm"),
+    PRICE_GREATER_THAN_0(1000,"số tiền không được âm"),
+    VALID_GREATER_THAN_0(1000,"giá trị không được âm"),
+
     CATEGORY_HAS_PRODUCTS(1000,"Danh mục vẫn còn sản phẩm, không thể xóa"),
     CANNOT_RESTORE_PRODUCT_CATEGORY_DELETED(1000, "Không thể khôi phục sản phẩm vì danh mục của sản phẩm đã bị xóa"),
     PRODUCT_IN_ORDER_NOT_DELETABLE(1000, "Sản phẩm đang nằm trong đơn hàng chưa đưuọc giao, không thể xóa"),

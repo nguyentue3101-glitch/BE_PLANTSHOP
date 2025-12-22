@@ -8,4 +8,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class AppException extends RuntimeException{
     ErrorCode errorCode;
+
 }

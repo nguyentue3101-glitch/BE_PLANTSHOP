@@ -45,7 +45,7 @@ public class MoMoUtil {
     }
     
     /**
-     * Tạo raw hash string từ các tham số
+     * Tạo raw hash string từ các tham số để tạo chữ ký
      */
     public static String createRawHash(String accessKey, String amount, String extraData, 
                                        String ipnUrl, String orderId, String orderInfo, 

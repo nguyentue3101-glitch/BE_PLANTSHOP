@@ -19,6 +19,7 @@ import com.example.backendplantshop.service.intf.MoMoService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -43,9 +44,9 @@ public class DepositServiceImpl implements DepositService {
     private final AuthServiceImpl authService;
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public CreatePaymentResponse createDepositPayment(int orderId) {
-        Orders order = validateOrderOwnership(orderId);
+        Orders order = validateOrderOwnership(orderId);  //kiểm tra quyền
         if (!requiresDeposit(orderId)) {
             throw new AppException(ErrorCode.DEPOSIT_NOT_REQUIRED);
         }
@@ -156,6 +157,7 @@ public class DepositServiceImpl implements DepositService {
         }
     }
 
+    //kiểm tra có cần đặt cọc ko
     @Override
     public boolean requiresDeposit(int orderId) {
         List<OrderDetails> orderDetails = orderDetailMapper.findByOrderId(orderId);
@@ -168,12 +170,13 @@ public class DepositServiceImpl implements DepositService {
         return totalQuantity >= DEPOSIT_QUANTITY_THRESHOLD;
     }
 
+    //kiểm tra xem có tồn tại đơn hàng ko
     private Orders validateOrderOwnership(int orderId) {
         Orders order = orderMapper.findById(orderId);
         if (order == null) {
             throw new AppException(ErrorCode.LIST_NOT_FOUND);
         }
-        enforceOwnership(order.getUser_id());
+        enforceOwnership(order.getUser_id()); //kiểm tra quyền truy cập
         return order;
     }
 
@@ -185,12 +188,13 @@ public class DepositServiceImpl implements DepositService {
         }
     }
 
+    //tính tin đặt cọc
     private BigDecimal calculateDepositAmount(Orders order) {
         BigDecimal discountAmount = order.getDiscount_amount() != null ? order.getDiscount_amount() : BigDecimal.ZERO;
         return order.getTotal()
-                .subtract(discountAmount)
-                .multiply(DEPOSIT_RATIO)
-                .setScale(0, RoundingMode.HALF_UP);
+                .subtract(discountAmount) //trừ tiền giảm giá
+                .multiply(DEPOSIT_RATIO) //nhân 0.5 (đặt cọc 50%)
+                .setScale(0, RoundingMode.HALF_UP); //ko lấy phan thập phân , .5 làm tròn lên dưới .5 làm tròn xuống
     }
 
     private PaymentMethod resolveMoMoPaymentMethod() {

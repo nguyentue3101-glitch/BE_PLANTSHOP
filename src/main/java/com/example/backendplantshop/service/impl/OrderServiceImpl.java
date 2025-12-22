@@ -148,17 +148,17 @@ public class OrderServiceImpl implements OrderService {
         if (orderRequest.getPayment() != null) {
             try {
                 PaymentDtoRequest paymentRequest = orderRequest.getPayment();
-                
+
                 // Validate payment method
-               PaymentMethod paymentMethod =
-                    paymentMethodMapper.findById(paymentRequest.getMethod_id());
+                PaymentMethod paymentMethod =
+                        paymentMethodMapper.findById(paymentRequest.getMethod_id());
                 if (paymentMethod == null) {
                     throw new AppException(ErrorCode.LIST_NOT_FOUND);
                 }
-                
+
                 // Tạo payment cho đơn hàng
                 Payment payment = PaymentConvert.convertPaymentDtoRequestToPayment(
-                    paymentRequest, order.getOrder_id(), now);
+                        paymentRequest, order.getOrder_id(), now);
                 paymentMapper.insert(payment);
                 log.info("Đã tạo payment với ID: {} cho order ID: {}", payment.getPayment_id(), order.getOrder_id());
             } catch (Exception e) {
@@ -187,7 +187,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderDtoResponse getOrderById(int orderId) {
         int currentUserId = authService.getCurrentUserId();
         String role = authService.getCurrentRole();
-        
+
         Orders order = orderMapper.findById(orderId);
         if (order == null) {
             throw new AppException(ErrorCode.LIST_NOT_FOUND);
@@ -200,7 +200,7 @@ public class OrderServiceImpl implements OrderService {
 
         List<OrderDetails> orderDetails = orderDetailMapper.findByOrderId(orderId);
         List<OrderDetailDtoResponse> orderDetailDtos = new ArrayList<>();
-        
+
         for (OrderDetails orderDetail : orderDetails) {
             Products product = productMapper.findById(orderDetail.getProduct_id());
             if (product != null) {
@@ -226,7 +226,7 @@ public class OrderServiceImpl implements OrderService {
     public List<OrderDtoResponse> getOrdersByUserId(int userId) {
         int currentUserId = authService.getCurrentUserId();
         String role = authService.getCurrentRole();
-        
+
         // User chỉ có thể xem đơn hàng của mình, Admin có thể xem tất cả
         if (authService.isUser(role) && userId != currentUserId) {
             throw new AppException(ErrorCode.ACCESS_DENIED);
@@ -241,7 +241,7 @@ public class OrderServiceImpl implements OrderService {
                 .map(order -> {
                     List<OrderDetails> orderDetails = orderDetailMapper.findByOrderId(order.getOrder_id());
                     List<OrderDetailDtoResponse> orderDetailDtos = new ArrayList<>();
-                    
+
                     for (OrderDetails orderDetail : orderDetails) {
                         Products product = productMapper.findById(orderDetail.getProduct_id());
                         if (product != null) {
@@ -253,10 +253,10 @@ public class OrderServiceImpl implements OrderService {
                             orderDetailDtos.add(orderDetailDto);
                         }
                     }
-                    
+
                     OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetails);
-                     response.setOrder_details(orderDetailDtos);
-                     enrichOrderResponseWithDeposit(response, orderDetails);
+                    response.setOrder_details(orderDetailDtos);
+                    enrichOrderResponseWithDeposit(response, orderDetails);
                     return response;
                 })
                 .collect(Collectors.toList());
@@ -273,7 +273,7 @@ public class OrderServiceImpl implements OrderService {
 
         // Lấy tất cả đơn hàng từ database
         List<Orders> orders = orderMapper.getAll();
-        
+
         // Nếu danh sách rỗng, trả về list rỗng thay vì throw exception
         if (orders == null || orders.isEmpty()) {
             log.info("Không có đơn hàng nào trong hệ thống");
@@ -288,7 +288,7 @@ public class OrderServiceImpl implements OrderService {
                     // Lấy chi tiết đơn hàng
                     List<OrderDetails> orderDetails = orderDetailMapper.findByOrderId(order.getOrder_id());
                     List<OrderDetailDtoResponse> orderDetailDtos = new ArrayList<>();
-                    
+
                     // Convert order details sang DTO với thông tin sản phẩm
                     for (OrderDetails orderDetail : orderDetails) {
                         Products product = productMapper.findById(orderDetail.getProduct_id());
@@ -302,18 +302,18 @@ public class OrderServiceImpl implements OrderService {
                             orderDetailDtos.add(orderDetailDto);
                         }
                     }
-                    
+
                     // Lấy thông tin user
                     Users user = userMapper.findById(order.getUser_id());
                     UserDtoResponse userDto = null;
                     if (user != null) {
                         userDto = UserConvert.convertUsersToUserDtoResponse(user);
                     }
-                    
+
                     // Tạo response DTO
                     OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetails);
                     response.setOrder_details(orderDetailDtos);
-                     enrichOrderResponseWithDeposit(response, orderDetails);
+                    enrichOrderResponseWithDeposit(response, orderDetails);
                     response.setUser(userDto); // Set thông tin user vào response
                     return response;
                 })
@@ -346,9 +346,9 @@ public class OrderServiceImpl implements OrderService {
 
         // 5. CANCELLED + SHIPPING/DELIVERED/PREPARING_ORDER → Không hợp lý
         if (orderStatus == OrderSatus.CANCELLED) {
-            if (shippingStatus == ShippingStatus.SHIPPING || 
-                shippingStatus == ShippingStatus.DELIVERED || 
-                shippingStatus == ShippingStatus.PREPARING_ORDER) {
+            if (shippingStatus == ShippingStatus.SHIPPING ||
+                    shippingStatus == ShippingStatus.DELIVERED ||
+                    shippingStatus == ShippingStatus.PREPARING_ORDER) {
                 throw new AppException(ErrorCode.INVALID_ORDER_STATUS_COMBINATION);
             }
         }
@@ -377,22 +377,22 @@ public class OrderServiceImpl implements OrderService {
         if (payments == null || payments.isEmpty()) {
             return PaymentStatus.PROCESSING; // Mặc định nếu chưa có payment
         }
-        
+
         // Tìm payment có status SUCCESS trước, nếu không có thì lấy payment mới nhất
         Payment successPayment = payments.stream()
                 .filter(p -> p.getStatus() == PaymentStatus.SUCCESS)
                 .findFirst()
                 .orElse(null);
-        
+
         if (successPayment != null) {
             return PaymentStatus.SUCCESS;
         }
-        
+
         // Lấy payment mới nhất
         Payment latestPayment = payments.stream()
                 .max((p1, p2) -> p1.getPayment_date().compareTo(p2.getPayment_date()))
                 .orElse(payments.get(0));
-        
+
         return latestPayment.getStatus();
     }
 
@@ -401,7 +401,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderDtoResponse updateOrderStatus(int orderId, UpdateOrderStatusDtoRequest request) {
         int currentUserId = authService.getCurrentUserId();
         String role = authService.getCurrentRole();
-        
+
         Orders order = orderMapper.findById(orderId);
         if (order == null) {
             throw new AppException(ErrorCode.LIST_NOT_FOUND);
@@ -420,13 +420,13 @@ public class OrderServiceImpl implements OrderService {
 
         // Validate logic trước khi update
         PaymentStatus currentPaymentStatus = getPaymentStatusFromOrder(orderId);
-        ShippingStatus currentShippingStatus = order.getShipping_status() != null 
-                ? order.getShipping_status() 
+        ShippingStatus currentShippingStatus = order.getShipping_status() != null
+                ? order.getShipping_status()
                 : ShippingStatus.UNDELIVERED;
-        
+
         // Lưu trạng thái đơn hàng trước khi cập nhật để kiểm tra xem có cần cộng lại số lượng không
         OrderSatus previousOrderStatus = order.getStatus();
-        
+
         validateOrderStatusLogic(request.getStatus(), currentShippingStatus, currentPaymentStatus);
 
         // Cập nhật status
@@ -446,7 +446,7 @@ public class OrderServiceImpl implements OrderService {
                                 orderDetail.getQuantity(), orderDetail.getProduct_id(), orderId);
                     }
                 }
-                
+
                 // Nếu đã thanh toán thành công, cần hoàn tiền trước khi hủy
                 // KHÔNG set payment status thành FAILED vì đã thanh toán thành công
                 // Payment status sẽ giữ nguyên SUCCESS, chỉ cần hoàn tiền qua MoMo Refund API
@@ -460,7 +460,7 @@ public class OrderServiceImpl implements OrderService {
                     paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.FAILED);
                     log.info("Đã cập nhật tất cả payments của order {} thành FAILED khi hủy đơn (chưa thanh toán thành công)", orderId);
                 }
-                
+
                 // Cập nhật shipping status thành UNDELIVERED khi hủy đơn
                 if (order.getShipping_status() != ShippingStatus.UNDELIVERED) {
                     order.setShipping_status(ShippingStatus.UNDELIVERED);
@@ -476,7 +476,7 @@ public class OrderServiceImpl implements OrderService {
         // Lấy order details để trả về
         List<OrderDetails> orderDetails = orderDetailMapper.findByOrderId(orderId);
         List<OrderDetailDtoResponse> orderDetailDtos = new ArrayList<>();
-        
+
         for (OrderDetails orderDetail : orderDetails) {
             Products product = productMapper.findById(orderDetail.getProduct_id());
             if (product != null) {
@@ -728,7 +728,7 @@ public class OrderServiceImpl implements OrderService {
     public void deleteOrder(int orderId) {
         int currentUserId = authService.getCurrentUserId();
         String role = authService.getCurrentRole();
-        
+
         // Kiểm tra đơn hàng tồn tại
         Orders order = orderMapper.findById(orderId);
         if (order == null) {
@@ -765,7 +765,7 @@ public class OrderServiceImpl implements OrderService {
                 if (orderId != null) {
                     // Cập nhật payment status thành SUCCESS
                     paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.SUCCESS);
-                    
+
                     // Đảm bảo trạng thái đơn hàng là PENDING_CONFIRMATION sau khi thanh toán thành công
                     Orders order = orderMapper.findById(orderId);
                     if (order != null && order.getStatus() != OrderSatus.PENDING_CONFIRMATION) {
@@ -774,7 +774,7 @@ public class OrderServiceImpl implements OrderService {
                         orderMapper.update(order);
                         log.info("Đã cập nhật trạng thái đơn hàng {} thành PENDING_CONFIRMATION sau khi thanh toán MoMo thành công", orderId);
                     }
-                    
+
                     log.info("Đã cập nhật payment status thành SUCCESS và order status thành PENDING_CONFIRMATION cho đơn hàng {} sau khi thanh toán MoMo thành công", orderId);
                 }
             } catch (Exception e) {
@@ -789,4 +789,3 @@ public class OrderServiceImpl implements OrderService {
         }
     }
 }
-

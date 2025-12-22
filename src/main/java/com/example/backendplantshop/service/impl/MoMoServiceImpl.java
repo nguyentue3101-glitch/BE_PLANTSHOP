@@ -28,7 +28,7 @@ public class MoMoServiceImpl implements MoMoService {
 
     private final MoMoConfig momoConfig;
     private final RestTemplate restTemplate;
-    
+
     @Override
     public CreatePaymentResponse createPayment(CreatePaymentRequest request) {
         try {
@@ -45,11 +45,11 @@ public class MoMoServiceImpl implements MoMoService {
                 log.error("MOMO_SECRET_KEY không được để trống. Vui lòng kiểm tra file .env");
                 throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
-            
+
             // Tạo requestId và orderId
             // requestId: UUID duy nhất cho mỗi request
             String requestId = UUID.randomUUID().toString();
-            
+
             // orderId cho MoMo: Kết hợp orderId từ DB + timestamp để đảm bảo tính duy nhất
             // Format: ORDER_{orderId}_{timestamp}
             // Ví dụ: ORDER_35_1733831974000
@@ -59,11 +59,11 @@ public class MoMoServiceImpl implements MoMoService {
             MoMoPaymentPurpose purpose = request.getPurpose() != null ? request.getPurpose() : MoMoPaymentPurpose.ORDER_PAYMENT;
             String orderPrefix = purpose == MoMoPaymentPurpose.DEPOSIT ? "DEPOSIT" : "ORDER";
             String momoOrderId = String.format("%s_%d_%d", orderPrefix, request.getOrderId(), timestamp);
-            
+
             log.info("Tạo MoMo orderId: {} từ orderId DB: {}", momoOrderId, request.getOrderId());
-            
+
             Long amount = request.getAmount().longValue();
-            
+
             // Tạo orderInfo nếu chưa có
             String orderInfo = request.getOrderInfo();
             if (orderInfo == null || orderInfo.isEmpty()) {
@@ -72,7 +72,7 @@ public class MoMoServiceImpl implements MoMoService {
 
             // Tạo extraData (có thể để trống hoặc JSON string)
             String extraData = "purpose=" + purpose.name();
-            
+
             // Tạo raw hash (sử dụng momoOrderId cho MoMo API)
             String rawHash = MoMoUtil.createRawHash(
                     momoConfig.getAccessKey(),
@@ -86,18 +86,19 @@ public class MoMoServiceImpl implements MoMoService {
                     requestId,
                     momoConfig.getRequestType()
             );
-            
+
             // Tạo signature
             String signature = MoMoUtil.createSignature(
                     momoConfig.getAccessKey(),
                     momoConfig.getSecretKey(),
                     rawHash
             );
-            
+            log.info("kiểm tra chữ ký ở đây:{}",signature);
+
             if (log.isDebugEnabled()) {
                 log.debug("MoMo raw hash trước khi ký: {}", rawHash);
             }
-            
+
             // Tạo MoMo payment request
             MoMoPaymentRequest momoRequest = MoMoPaymentRequest.builder()
                     .partnerCode(momoConfig.getPartnerCode())
@@ -115,7 +116,7 @@ public class MoMoServiceImpl implements MoMoService {
                     .lang(momoConfig.getLang())
                     .signature(signature)
                     .build();
-            
+
             if (log.isDebugEnabled()) {
                 try {
                     log.debug("MoMo payload gửi đi: {}", OBJECT_MAPPER.writeValueAsString(momoRequest));
@@ -123,22 +124,22 @@ public class MoMoServiceImpl implements MoMoService {
                     log.warn("Không thể serialize MoMo payload để log: {}", e.getMessage());
                 }
             }
-            
+
             // Gọi MoMo API
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<MoMoPaymentRequest> entity = new HttpEntity<>(momoRequest, headers);
-            
+
             String apiEndpoint = momoConfig.getApiEndpoint();
             log.info("Gọi MoMo API với requestId: {}, momoOrderId: {}, orderId DB: {}, amount: {}, purpose: {}",
                     requestId, momoOrderId, request.getOrderId(), amount, purpose);
-            
+
             // Validate endpoint URL
             if (apiEndpoint == null || apiEndpoint.trim().isEmpty()) {
                 log.error("MoMo API endpoint không được để trống");
                 throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
-            
+
             // Tự động sửa URL nếu thiếu /create
 //            if (!apiEndpoint.endsWith("/create")) {
 //                log.warn("MoMo API endpoint thiếu /create. Tự động sửa từ: {}", apiEndpoint);
@@ -146,34 +147,34 @@ public class MoMoServiceImpl implements MoMoService {
 //                apiEndpoint = apiEndpoint.replaceAll("/+$", "") + "/create";
 //                log.info("URL đã được sửa thành: {}", apiEndpoint);
 //            }
-            
+
 //            log.info("MoMo API Endpoint: {}", apiEndpoint);
-            
+
             ResponseEntity<MoMoPaymentResponse> response = restTemplate.exchange(
                     apiEndpoint,
                     HttpMethod.POST,
                     entity,
                     MoMoPaymentResponse.class
             );
-            
+
             MoMoPaymentResponse momoResponse = response.getBody();
-            
+
             if (momoResponse == null) {
                 throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
-            
+
             if (momoResponse.getResultCode() != null && momoResponse.getResultCode() != 0) {
                 log.error("MoMo API trả về lỗi: {} - {}", momoResponse.getResultCode(), momoResponse.getMessage());
                 throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
-            
+
             // Tạo response - trả về đầy đủ thông tin để frontend lựa chọn
             // - deeplink: dùng cho mobile app (momo://)
             // - payUrl: dùng cho web browser
             // - qrCodeUrl: dùng để hiển thị QR code
-            log.info("MoMo trả về - payUrl: {}, deeplink: {}, qrCodeUrl: {}", 
+            log.info("MoMo trả về - payUrl: {}, deeplink: {}, qrCodeUrl: {}",
                     momoResponse.getPayUrl(), momoResponse.getDeeplink(), momoResponse.getQrCodeUrl());
-            
+
             return CreatePaymentResponse.builder()
                     .payUrl(momoResponse.getPayUrl()) // URL thanh toán cho web
                     .qrCodeUrl(momoResponse.getQrCodeUrl()) // URL QR code
@@ -182,13 +183,13 @@ public class MoMoServiceImpl implements MoMoService {
                     .amount(amount)
                     .message("Tạo thanh toán thành công")
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("Lỗi khi tạo payment với MoMo: {}", e.getMessage(), e);
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     @Override
     public boolean verifyCallback(String signature, String rawHash) {
         try {
@@ -204,4 +205,3 @@ public class MoMoServiceImpl implements MoMoService {
         }
     }
 }
-
