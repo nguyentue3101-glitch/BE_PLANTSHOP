@@ -36,8 +36,8 @@ public class GoogleAuthService {
             String tokenUrl = "https://oauth2.googleapis.com/token";
             
             // Sử dụng redirectUri từ param, nếu null thì dùng từ config
-            String finalRedirectUri = (redirectUri != null && !redirectUri.trim().isEmpty()) 
-                ? redirectUri 
+            String finalRedirectUri = (redirectUri != null && !redirectUri.trim().isEmpty())
+                ? redirectUri
                 : this.redirectUri;
             
             log.info("Bắt đầu exchange code với redirect_uri: {}", finalRedirectUri);
@@ -69,7 +69,7 @@ public class GoogleAuthService {
                 throw new Exception("Không thể exchange code. Status: " + response.getStatusCode() + ", Body: " + responseBody);
             }
 
-            JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
+            JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class); //chuyển json thành đối tượng java( jsonObject)
             
             // Kiểm tra xem Google có trả về lỗi không
             if (jsonResponse.has("error")) {
@@ -159,9 +159,9 @@ public class GoogleAuthService {
     }
 
 
-    public String getGoogleId(Map<String, String> userInfo) {
-        return userInfo.get("id");
-    }
+//    public String getGoogleId(Map<String, String> userInfo) {
+//        return userInfo.get("id");
+//    }
     public String getEmail(Map<String, String> userInfo) {
         return userInfo.get("email");
     }

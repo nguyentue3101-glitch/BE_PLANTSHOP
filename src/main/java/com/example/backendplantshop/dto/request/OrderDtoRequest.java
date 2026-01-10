@@ -40,6 +40,9 @@ public class OrderDtoRequest {
     
     @NotNull(message = "Số điện thoại người nhận không được để trống")
     private String shipping_phone;
+
+    @NotNull(message = "phí vận chuyển không được để trống")
+    private BigDecimal shipping_fee;
     
     // Thông tin thanh toán (do FE gửi)
     @Valid

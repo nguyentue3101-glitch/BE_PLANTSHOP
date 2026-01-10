@@ -26,6 +26,7 @@
         <result property="size" column="size"/>
         <result property="out_of_stock" column="out_of_stock"/>
         <result property="is_deleted" column="p_is_deleted"/>
+        <result property="category_id" column="category_id"/>
         <result property="created_at" column="p_created_at"/>
         <result property="updated_at" column="p_updated_at"/>
         </association>
@@ -50,6 +51,7 @@
                         p.quantity AS p_quantity,
                         p.size,
                         p.out_of_stock,
+                        p.category_id,
                         p.is_deleted AS p_is_deleted,
                         p.created_at AS p_created_at,
                         p.updated_at AS p_updated_at
@@ -58,6 +60,7 @@
                  JOIN products p ON cd.product_id = p.product_id
         WHERE cd.cart_id = #{cartID}
           AND cd.is_deleted = 0
+
     </select>
 
 <!--    để client ko thêm sl vượt quá cho phép-->

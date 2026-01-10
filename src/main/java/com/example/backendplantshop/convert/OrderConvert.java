@@ -47,15 +47,43 @@ public class OrderConvert {
                 .shipping_name(request.getShipping_name())
                 .shipping_address(request.getShipping_address())
                 .shipping_phone(request.getShipping_phone())
+                .shipping_fee(request.getShipping_fee())
                 .is_deleted(false)
                 .build();
     }
     
-    public static OrderDtoResponse convertOrderToOrderDtoResponse(Orders order, List<OrderDetails> orderDetails) {
-        List<OrderDetailDtoResponse> orderDetailDtos = orderDetails.stream()
-                .map(OrderConvert::convertOrderDetailToOrderDetailDtoResponse)
-                .collect(Collectors.toList());
-        
+//    public static OrderDtoResponse convertOrderToOrderDtoResponse(Orders order, List<OrderDetails> orderDetails) {
+//        List<OrderDetailDtoResponse> orderDetailDtos = orderDetails.stream()
+//                .map(OrderConvert::convertOrderDetailToOrderDetailDtoResponse)
+//                .collect(Collectors.toList());
+//
+//        return OrderDtoResponse.builder()
+//                .order_id(order.getOrder_id())
+//                .total(order.getTotal())
+//                .discount_amount(order.getDiscount_amount())
+//                .final_total(order.getFinal_total())
+//                .order_date(order.getOrder_date())
+//                .status(order.getStatus())
+//                .shipping_status(order.getShipping_status())
+//                .created_at(order.getCreated_at())
+//                .updated_at(order.getUpdated_at())
+//                .user_id(order.getUser_id())
+//                .discount_id(order.getDiscount_id())
+//                .shipping_name(order.getShipping_name())
+//                .shipping_address(order.getShipping_address())
+//                .shipping_phone(order.getShipping_phone())
+//                .order_details(orderDetailDtos)
+//                .build();
+//    }
+    
+    /**
+     * Convert Orders entity sang OrderDtoResponse với orderDetailDtos đã có sẵn (có product)
+     * Sử dụng khi orderDetailDtos đã được convert với thông tin sản phẩm đầy đủ
+     * Tránh convert 2 lần (convert trong method này rồi lại ghi đè)
+     */
+    public static OrderDtoResponse convertOrderToOrderDtoResponse(
+            Orders order, 
+            List<OrderDetailDtoResponse> orderDetailDtos) {
         return OrderDtoResponse.builder()
                 .order_id(order.getOrder_id())
                 .total(order.getTotal())
@@ -71,7 +99,8 @@ public class OrderConvert {
                 .shipping_name(order.getShipping_name())
                 .shipping_address(order.getShipping_address())
                 .shipping_phone(order.getShipping_phone())
-                .order_details(orderDetailDtos)
+                .shipping_fee(order.getShipping_fee())
+                .order_details(orderDetailDtos)  // Dùng trực tiếp orderDetailDtos đã có product
                 .build();
     }
     

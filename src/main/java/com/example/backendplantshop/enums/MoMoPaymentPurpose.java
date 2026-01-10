@@ -9,6 +9,7 @@ public enum MoMoPaymentPurpose {
             return ORDER_PAYMENT;
         }
         String normalized = extraData.trim().toUpperCase();
+        //Kiểm tra xem chuỗi normalized có chứa từ "DEPOSIT" hay không
         if (normalized.contains("DEPOSIT")) {
             return DEPOSIT;
         }

@@ -31,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -86,7 +87,7 @@ public class AuthServiceImpl implements AuthenticationService {
             throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
         }
 
-        // Làm sạch dữ liệu: nếu email  là chuỗi rỗng hoặc chỉ chứa khoảng trắng thì gán null
+        // nếu email  là chuỗi rỗng hoặc chỉ chứa khoảng trắng thì gán null
         registerDtoRequest.setEmail(clean(registerDtoRequest.getEmail()));
 
         // Xác thực OTP trước khi đăng ký
@@ -103,7 +104,7 @@ public class AuthServiceImpl implements AuthenticationService {
         Users existingUserByEmail = userMapper.findByEmailIgnoreDeleted(registerDtoRequest.getEmail());
         if (existingUserByEmail != null) {
             // Nếu user đã tồn tại và chưa bị xóa 
-            if (existingUserByEmail.getIs_deleted() == null || !existingUserByEmail.getIs_deleted()) {
+            if ( !existingUserByEmail.getIs_deleted()) {
                 throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
             }
             // Nếu user đã tồn tại nhưng đã bị xóa mềm 
@@ -160,7 +161,7 @@ public class AuthServiceImpl implements AuthenticationService {
         Users existingUserByEmail = userMapper.findByEmailIgnoreDeleted(email);
         if (existingUserByEmail != null) {
             // Nếu user đã tồn tại và chưa bị xóa
-            if (existingUserByEmail.getIs_deleted() == null || !existingUserByEmail.getIs_deleted()) {
+            if (!existingUserByEmail.getIs_deleted()) {
                 throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
             }
             // Nếu user đã tồn tại nhưng đã bị xóa mềm
@@ -214,18 +215,6 @@ public class AuthServiceImpl implements AuthenticationService {
         String accessToken = jwtUtil.generateAccessToken(users.getUser_id(), users.getRole());
         String refreshToken = jwtUtil.generateRefreshToken(users.getUser_id(), users.getRole());
 
-        // Lưu token vào DB
-//        userTokenService.saveToken(UserTokens.builder()
-//                .user_id(users.getUser_id())
-//                .token(refreshToken) // chỉ lưu refreshToken trong DB
-//                .expires_at(LocalDateTime.now().plusDays(7)) // hạn refresh token
-//                .revoked(false)
-//                .build());
-//        // Trả về accessToken + refreshToken
-//        return LoginDtoResponse.builder()
-//                .accessToken(accessToken)
-//                .refreshToken(refreshToken)
-//                .build();
 
         userTokenService.saveToken(UserConvert.toUserToken(users, refreshToken));
         return UserConvert.toLoginDtoResponse(accessToken, refreshToken);
@@ -482,9 +471,9 @@ public class AuthServiceImpl implements AuthenticationService {
             throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
         }
 
-        try {
+        try {//chỉ lấy 10 kí tự đầu tiên ko lấy toàn bộ
             String codePreview = googleLoginDtoRequest.getCode().length() > 10 
-                ? googleLoginDtoRequest.getCode().substring(0, 10) + "..." 
+                ? googleLoginDtoRequest.getCode().substring(0, 10) + "..."
                 : googleLoginDtoRequest.getCode();
             log.info("Bắt đầu đăng nhập Google với code: {}, redirectUri: {}", 
                 codePreview, 
@@ -556,18 +545,6 @@ public class AuthServiceImpl implements AuthenticationService {
                 String jwtAccessToken = jwtUtil.generateAccessToken(user.getUser_id(), user.getRole());
                 String jwtRefreshToken = jwtUtil.generateRefreshToken(user.getUser_id(), user.getRole());
 
-                // Lưu refresh token vào DB
-//                userTokenService.saveToken(UserTokens.builder()
-//                        .user_id(user.getUser_id())
-//                        .token(jwtRefreshToken)
-//                        .expires_at(LocalDateTime.now().plusDays(7))
-//                        .revoked(false)
-//                        .build());
-//
-//                return LoginDtoResponse.builder()
-//                        .accessToken(jwtAccessToken)
-//                        .refreshToken(jwtRefreshToken)
-//                        .build();
                 userTokenService.saveToken(UserConvert.toUserToken(user, jwtRefreshToken));
 
                 return UserConvert.toLoginDtoResponse(jwtAccessToken,jwtRefreshToken);
@@ -593,7 +570,7 @@ public class AuthServiceImpl implements AuthenticationService {
             log.info("Username được tạo: {}", username);
 
             // Tạo user mới với password ngẫu nhiên (user Google không cần password)
-            String randomPassword = passwordEncoder.encode(java.util.UUID.randomUUID().toString());
+            String randomPassword = passwordEncoder.encode(UUID.randomUUID().toString());
             Users user = Users.builder()
                     .email(email)
                     .password(randomPassword)
@@ -616,18 +593,6 @@ public class AuthServiceImpl implements AuthenticationService {
             String jwtAccessToken = jwtUtil.generateAccessToken(user.getUser_id(), user.getRole());
             String jwtRefreshToken = jwtUtil.generateRefreshToken(user.getUser_id(), user.getRole());
 
-            // Lưu refresh token vào DB
-//            userTokenService.saveToken(UserTokens.builder()
-//                    .user_id(user.getUser_id())
-//                    .token(jwtRefreshToken)
-//                    .expires_at(LocalDateTime.now().plusDays(7))
-//                    .revoked(false)
-//                    .build());
-//
-//            return LoginDtoResponse.builder()
-//                    .accessToken(jwtAccessToken)
-//                    .refreshToken(jwtRefreshToken)
-//                    .build();
 
             userTokenService.saveToken(UserConvert.toUserToken(user, jwtRefreshToken));
 

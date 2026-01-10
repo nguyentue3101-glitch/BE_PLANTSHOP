@@ -73,8 +73,12 @@ public class OrderServiceImpl implements OrderService {
         if (orderRequest.getFinal_total() == null || orderRequest.getFinal_total().compareTo(BigDecimal.ZERO) < 0) {
             throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
         }
+        if (orderRequest.getShipping_fee() == null || orderRequest.getShipping_fee().compareTo(BigDecimal.ZERO) < 0) {
+            throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
+        }
 
-        // 3. Xử lý discount (chỉ lấy discount_id)
+
+        // 3. Xử lý discount
         Integer discountId = null;
         if (orderRequest.getDiscount_id() != null) {
             Discounts discount = discountMapper.findById(orderRequest.getDiscount_id());
@@ -90,7 +94,7 @@ public class OrderServiceImpl implements OrderService {
             discountId = discount.getDiscount_id();
         }
 
-        // 4. Validate và tạo giá OrderDetails từ dữ liệu FE gửi (chưa thêm vào DB)
+        // 4. Validate và tạo OrderDetails
         List<OrderDetails> orderDetailsList = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
 
@@ -118,7 +122,7 @@ public class OrderServiceImpl implements OrderService {
                 throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
             }
 
-            // Tạo OrderDetail từ dữ liệu FE gửi
+            // Lúc này chỉ mới chứa thông tin chi tiết đơn chưa có thông tin chi tiết sản phẩm trong đơn
             OrderDetails orderDetail = OrderConvert.convertOrderDetailDtoRequestToOrderDetails(item, now);
             orderDetailsList.add(orderDetail);
         }
@@ -139,6 +143,7 @@ public class OrderServiceImpl implements OrderService {
 
             // 3.Lấy thông tin sản phẩm để trả về
             Products product = productMapper.findById(orderDetail.getProduct_id());
+            // lúc này thông tin sản phẩm mới được thêm vào
             OrderDetailDtoResponse orderDetailDto = OrderConvert.convertOrderDetailToOrderDetailDtoResponseWithProduct(
                     orderDetail, product);
             orderDetailDtos.add(orderDetailDto);
@@ -176,9 +181,9 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 10. Tạo response
-        OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetailsList);
-        response.setOrder_details(orderDetailDtos);
-        enrichOrderResponseWithDeposit(response, orderDetailsList);  //bổ sung thông tin đặt cọc (nếu có)
+        // Sử dụng method convert nhận orderDetailDtos (đã có product) để tránh convert 2 lần
+        OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetailDtos);
+        enrichOrderResponseWithDeposit(response, orderDetailsList);//bổ sung thông tin đặt cọc (nếu có)
         attachDepositPaymentLink(order, response);
         return response;
     }
@@ -214,8 +219,8 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetails);
-        response.setOrder_details(orderDetailDtos);
+        // Sử dụng method convert nhận orderDetailDtos (đã có product) để tránh convert 2 lần
+        OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetailDtos);
         enrichOrderResponseWithDeposit(response, orderDetails);
         return response;
     }
@@ -254,8 +259,8 @@ public class OrderServiceImpl implements OrderService {
                         }
                     }
 
-                    OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetails);
-                    response.setOrder_details(orderDetailDtos);
+                    // Sử dụng method convert nhận orderDetailDtos (đã có product) để tránh convert 2 lần
+                    OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetailDtos);
                     enrichOrderResponseWithDeposit(response, orderDetails);
                     return response;
                 })
@@ -311,8 +316,8 @@ public class OrderServiceImpl implements OrderService {
                     }
 
                     // Tạo response DTO
-                    OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetails);
-                    response.setOrder_details(orderDetailDtos);
+                    // Sử dụng method convert nhận orderDetailDtos (đã có product) để tránh convert 2 lần
+                    OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetailDtos);
                     enrichOrderResponseWithDeposit(response, orderDetails);
                     response.setUser(userDto); // Set thông tin user vào response
                     return response;
@@ -322,7 +327,7 @@ public class OrderServiceImpl implements OrderService {
 
 
     private void validateOrderStatusLogic(OrderSatus orderStatus, ShippingStatus shippingStatus, PaymentStatus paymentStatus) {
-        // 1. PENDING_CONFIRMATION + SHIPPING/DELIVERED → Không hợp lý
+        // 1. chưa xác nhận đơn mà đang giao hoặc đã giao
         if (orderStatus == OrderSatus.PENDING_CONFIRMATION) {
             if (shippingStatus == ShippingStatus.SHIPPING || shippingStatus == ShippingStatus.DELIVERED) {
                 throw new AppException(ErrorCode.INVALID_ORDER_STATUS_COMBINATION);
@@ -378,7 +383,7 @@ public class OrderServiceImpl implements OrderService {
             return PaymentStatus.PROCESSING; // Mặc định nếu chưa có payment
         }
 
-        // Tìm payment có status SUCCESS trước, nếu không có thì lấy payment mới nhất
+        // Tìm payment có status SUCCESS trước là chỉ lấy 1 record
         Payment successPayment = payments.stream()
                 .filter(p -> p.getStatus() == PaymentStatus.SUCCESS)
                 .findFirst()
@@ -388,7 +393,7 @@ public class OrderServiceImpl implements OrderService {
             return PaymentStatus.SUCCESS;
         }
 
-        // Lấy payment mới nhất
+        // Lấy payment mới nhất bằng
         Payment latestPayment = payments.stream()
                 .max((p1, p2) -> p1.getPayment_date().compareTo(p2.getPayment_date()))
                 .orElse(payments.get(0));
@@ -434,7 +439,7 @@ public class OrderServiceImpl implements OrderService {
         order.setUpdated_at(LocalDateTime.now());
         orderMapper.update(order);
 
-        // Nếu hủy đơn (CANCELLED), xử lý hoàn tiền nếu đã thanh toán thành công
+        // Nếu hủy đơn (CANCELLED)
         if (request.getStatus() == OrderSatus.CANCELLED) {
             try {
                 // Nếu đơn chưa được xác nhận (PENDING_CONFIRMATION), cộng lại số lượng sản phẩm vào kho
@@ -447,16 +452,10 @@ public class OrderServiceImpl implements OrderService {
                     }
                 }
 
-                // Nếu đã thanh toán thành công, cần hoàn tiền trước khi hủy
-                // KHÔNG set payment status thành FAILED vì đã thanh toán thành công
-                // Payment status sẽ giữ nguyên SUCCESS, chỉ cần hoàn tiền qua MoMo Refund API
+                //set lại trạng thái payment
                 if (currentPaymentStatus == PaymentStatus.SUCCESS) {
-                    log.warn("Đơn hàng {} đã thanh toán thành công, cần hoàn tiền MoMo trước khi hủy", orderId);
-                    log.warn("LƯU Ý: Cần gọi MoMo Refund API với transId từ callback để hoàn tiền cho khách hàng");
-                    log.warn("Payment status sẽ giữ nguyên SUCCESS (không đổi thành FAILED) vì đã thanh toán thành công");
-                    // TODO: Implement MoMo refund API call here nếu cần tự động hoàn tiền
+                    paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.FAILED);
                 } else {
-                    // Chỉ set payment status thành FAILED nếu chưa thanh toán thành công
                     paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.FAILED);
                     log.info("Đã cập nhật tất cả payments của order {} thành FAILED khi hủy đơn (chưa thanh toán thành công)", orderId);
                 }
@@ -489,8 +488,8 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetails);
-        response.setOrder_details(orderDetailDtos);
+        // Sử dụng method convert nhận orderDetailDtos
+        OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetailDtos);
         enrichOrderResponseWithDeposit(response, orderDetails);  //bổ sung thông tin đặt cọc (nếu có)
         return response;
     }
@@ -516,7 +515,7 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.MISSING_REQUIRED_FIELD);
         }
 
-        // Logic validation: Nếu đơn hàng chưa ở trạng thái CONFIRMED thì shipping_status chỉ được là UNDELIVERED
+        // đơn hàng chưa xác nhận mà có trạng thái giao hàng khác với undelivered là ko hợp lệ
         if (order.getStatus() != OrderSatus.CONFIRMED) {
             if (request.getShipping_status() != ShippingStatus.UNDELIVERED) {
                 throw new AppException(ErrorCode.INVALID_ORDER_STATUS_COMBINATION);
@@ -554,8 +553,8 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetails);
-        response.setOrder_details(orderDetailDtos);
+        // Sử dụng method convert nhận orderDetailDtos (đã có product) để tránh convert 2 lần
+        OrderDtoResponse response = OrderConvert.convertOrderToOrderDtoResponse(order, orderDetailDtos);
         enrichOrderResponseWithDeposit(response, orderDetails); //bổ sung thông tin đặt cọc (nếu có)
         return response;
     }
@@ -757,35 +756,35 @@ public class OrderServiceImpl implements OrderService {
     }
 
     //hàm set trạng thái giao dịch thành công nếu thanh toán thành công từ momo
-    @Override
-    @Transactional
-    public void handleOrderPaymentCallback(Integer orderId, MoMoCallbackRequest callbackRequest) {
-        if (callbackRequest.getResultCode() != null && callbackRequest.getResultCode() == 0) {
-            try {
-                if (orderId != null) {
-                    // Cập nhật payment status thành SUCCESS
-                    paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.SUCCESS);
-
-                    // Đảm bảo trạng thái đơn hàng là PENDING_CONFIRMATION sau khi thanh toán thành công
-                    Orders order = orderMapper.findById(orderId);
-                    if (order != null && order.getStatus() != OrderSatus.PENDING_CONFIRMATION) {
-                        order.setStatus(OrderSatus.PENDING_CONFIRMATION);
-                        order.setUpdated_at(LocalDateTime.now());
-                        orderMapper.update(order);
-                        log.info("Đã cập nhật trạng thái đơn hàng {} thành PENDING_CONFIRMATION sau khi thanh toán MoMo thành công", orderId);
-                    }
-
-                    log.info("Đã cập nhật payment status thành SUCCESS và order status thành PENDING_CONFIRMATION cho đơn hàng {} sau khi thanh toán MoMo thành công", orderId);
-                }
-            } catch (Exception e) {
-                log.error("Lỗi khi cập nhật payment và order status từ callback: {}", e.getMessage(), e);
-            }
-        } else {
-            log.warn("Thanh toán thất bại: orderId={}, message={}",
-                    callbackRequest.getOrderId(), callbackRequest.getMessage());
-            if (orderId != null) {
-                paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.FAILED);
-            }
-        }
-    }
+//    @Override
+//    @Transactional
+//    public void handleOrderPaymentCallback(Integer orderId, MoMoCallbackRequest callbackRequest) {
+//        if (callbackRequest.getResultCode() != null && callbackRequest.getResultCode() == 0) {
+//            try {
+//                if (orderId != null) {
+//                    // Cập nhật payment status thành SUCCESS
+//                    paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.SUCCESS);
+//
+//                    // set pending để user có thể hủy nếu đơn chưa xác nhận
+//                    Orders order = orderMapper.findById(orderId);
+//                    if (order != null && order.getStatus() != OrderSatus.PENDING_CONFIRMATION) {
+//                        order.setStatus(OrderSatus.PENDING_CONFIRMATION);
+//                        order.setUpdated_at(LocalDateTime.now());
+//                        orderMapper.update(order);
+//                        log.info("Đã cập nhật trạng thái đơn hàng {} thành PENDING_CONFIRMATION sau khi thanh toán MoMo thành công", orderId);
+//                    }
+//
+//                    log.info("Đã cập nhật payment status thành SUCCESS và order status thành PENDING_CONFIRMATION cho đơn hàng {} sau khi thanh toán MoMo thành công", orderId);
+//                }
+//            } catch (Exception e) {
+//                log.error("Lỗi khi cập nhật payment và order status từ callback: {}", e.getMessage(), e);
+//            }
+//        } else {
+//            log.warn("Thanh toán thất bại: orderId={}, message={}",
+//                    callbackRequest.getOrderId(), callbackRequest.getMessage());
+//            if (orderId != null) {
+//                paymentService.updatePaymentsByOrderId(orderId, PaymentStatus.FAILED);
+//            }
+//        }
+//    }
 }

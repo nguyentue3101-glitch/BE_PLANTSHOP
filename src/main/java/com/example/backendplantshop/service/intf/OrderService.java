@@ -17,6 +17,5 @@ public interface OrderService {
     OrderDtoResponse updateShippingStatus(int orderId, UpdateShippingStatusDtoRequest request);
 //    OrderDtoResponse updateShippingInfo(int orderId, UpdateShippingInfoDtoRequest request);
     void deleteOrder(int orderId);
-    void handleOrderPaymentCallback(Integer orderId, MoMoCallbackRequest callbackRequest);
 }
 

@@ -13,6 +13,7 @@ import com.example.backendplantshop.enums.MoMoPaymentPurpose;
 import com.example.backendplantshop.enums.VNPayPaymentPurpose;
 import com.example.backendplantshop.config.MoMoConfig;
 import com.example.backendplantshop.exception.AppException;
+import com.example.backendplantshop.service.impl.MoMoCallBackService;
 import com.example.backendplantshop.service.intf.MoMoService;
 import com.example.backendplantshop.service.intf.OrderService;
 import com.example.backendplantshop.service.intf.PaymentService;
@@ -38,6 +39,7 @@ import java.util.Map;
 public class PaymentController {
     
     private final PaymentService paymentService;
+    private final MoMoCallBackService moMoCallBackService;
     private final MoMoService momoService;
     private final VNPayService vnPayService;
     private final OrderService orderService;
@@ -51,7 +53,7 @@ public class PaymentController {
         // Kiểm tra quyền truy cập
         String role = authService.getCurrentRole();
         if (!authService.isUser(role) && !authService.isAdmin(role)) {
-            throw new com.example.backendplantshop.exception.AppException(ErrorCode.ACCESS_DENIED);
+            throw new AppException(ErrorCode.ACCESS_DENIED);
         }
 
         return ApiResponse.<PaymentDtoResponse>builder()
@@ -128,7 +130,7 @@ public class PaymentController {
         // Kiểm tra quyền truy cập
         String role = authService.getCurrentRole();
         if (!authService.isUser(role) && !authService.isAdmin(role)) {
-            throw new com.example.backendplantshop.exception.AppException(ErrorCode.ACCESS_DENIED);
+            throw new AppException(ErrorCode.ACCESS_DENIED);
         }
         
         CreatePaymentResponse response = momoService.createPayment(request);
@@ -181,9 +183,9 @@ public class PaymentController {
 
             // Xử lý kết quả thanh toán
             if (purpose == MoMoPaymentPurpose.DEPOSIT) {
-                paymentService.handleDepositCallback(orderId, callbackRequest);
+                moMoCallBackService.handleDepositCallback(orderId, callbackRequest);
             } else {
-                orderService.handleOrderPaymentCallback(orderId, callbackRequest);
+                moMoCallBackService.handleOrderPaymentCallback(orderId, callbackRequest);
             }
             
             // Trả về response cho MoMo

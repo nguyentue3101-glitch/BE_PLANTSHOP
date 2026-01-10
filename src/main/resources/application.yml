@@ -50,14 +50,9 @@ google:
     redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:3000/auth/google/callback}
 
 momo:
-  # Cấu hình MoMo Real Mode cho Sandbox Environment
-  # Sử dụng test credentials từ MoMo Developer Portal
-  # Lưu ý: partner-code, access-key, secret-key là BẮT BUỘC - phải có trong file .env
   partner-code: ${DEV_PARTNER_CODE}
   access-key: ${DEV_ACCESS_KEY}
   secret-key: ${DEV_SECRET_KEY}
-  # API endpoint mặc định là test environment (sandbox)
-  # Lưu ý: URL phải đầy đủ: /v2/gateway/api/create (không thiếu /create)
   api-endpoint: ${DEV_MOMO_ENDPOINT:https://test-payment.momo.vn/v2/gateway/api/create}
   # Return URL: Backend nhận redirect từ MoMo, sau đó redirect về frontend
   return-url: ${RETURN_URL:http://localhost:1234/api/payments/momo/return}
@@ -68,7 +63,6 @@ momo:
   # Store information
   store-name: ${MOMO_STORE_NAME:Plant Shop}
   store-id: ${MOMO_STORE_ID:PlantShop}
-  # Ngôn ngữ mặc định là tiếng Việt
   lang: ${MOMO_LANG:vi}
 
 vnpay:
@@ -97,5 +91,8 @@ logging:
     # com.example.backendplantshop.mapper: DEBUG
     # org.springframework.jdbc: DEBUG
     root: INFO
+#    com.example.backendplantshop.mapper: DEBUG
+#    org.springframework.jdbc.core: DEBUG
     com.example.backendplantshop: INFO
+
 

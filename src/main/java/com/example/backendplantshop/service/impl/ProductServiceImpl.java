@@ -2,6 +2,7 @@ package com.example.backendplantshop.service.impl;
 
 import com.example.backendplantshop.dto.request.products.ProductDtoRequest;
 import com.example.backendplantshop.dto.response.ProductDtoResponse;
+import com.example.backendplantshop.dto.response.ProductPageDtoResponse;
 import com.example.backendplantshop.entity.Orders;
 import com.example.backendplantshop.entity.Products;
 import com.example.backendplantshop.entity.Users;
@@ -279,6 +280,20 @@ public class ProductServiceImpl implements ProductService {
             throw new AppException(ErrorCode.LIST_NOT_FOUND);
         }
         return products;
+    }
+
+    @Override
+    public ProductPageDtoResponse getProductForPage(int page, int limit) {
+        if(page <1) {
+            page = 1;
+        }
+        int offset = (page - 1) * limit ;
+
+        List<Products> products = productMapper.getProductForPage(limit, offset);
+        int total = productMapper.countProduct();
+        log.info("số item limit {}", limit);
+
+        return new ProductPageDtoResponse(products, page, limit, total);
     }
 
 }

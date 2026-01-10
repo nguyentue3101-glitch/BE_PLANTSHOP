@@ -14,11 +14,11 @@ import java.util.Arrays;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/images/**") //Khai báo pattern URL.
-                .addResourceLocations("file:" + System.getProperty("user.dir") + "/images/"); //Chỉ định thư mục vật lý chứa file.
-    }
+//    @Override
+//    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+//        registry.addResourceHandler("/images/**") //Khai báo pattern URL.
+//                .addResourceLocations("file:" + System.getProperty("user.dir") + "/images/"); //Chỉ định thư mục vật lý chứa file.
+//    }
     
     @Override
     public void addCorsMappings(CorsRegistry registry) {

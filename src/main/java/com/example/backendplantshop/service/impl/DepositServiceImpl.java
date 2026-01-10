@@ -44,23 +44,31 @@ public class DepositServiceImpl implements DepositService {
     private final AuthServiceImpl authService;
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRED)
     public CreatePaymentResponse createDepositPayment(int orderId) {
-        Orders order = validateOrderOwnership(orderId);  //kiểm tra quyền
+        log.info("=============ĐÃ VÀO ĐƯỢC ĐÂY==========");
+        Orders order = validateOrderOwnership(orderId);  //kiểm tra tồn tại đơn và đơn có phải của user ko
         if (!requiresDeposit(orderId)) {
             throw new AppException(ErrorCode.DEPOSIT_NOT_REQUIRED);
         }
 
+        log.info("ĐƠN HÀNG ĐỦ ĐIỀU KIỆN ĐẶT CỌC");
+
         Deposit existing = depositMapper.findLatestByOrderId(orderId);
         if (existing != null && Boolean.TRUE.equals(existing.getPaid())) {
             throw new AppException(ErrorCode.DEPOSIT_ALREADY_PAID);
+        }
+        if (existing != null) {
+            log.info("kiểm tra có thanh toán chưa:{}", existing.getPaid());
+        } else {
+            log.info("Chưa có deposit record nào cho order {}", orderId);
         }
 
         BigDecimal depositAmount = calculateDepositAmount(order);
         PaymentMethod momoMethod = resolveMoMoPaymentMethod();
 
         // Tạo deposit record với paid = 0 (chưa đặt cọc) khi tạo payment request
-        // Chỉ tạo mới nếu chưa có deposit record nào
+        // convert request -> entity
         if (existing == null) {
             Deposit deposit = Deposit.builder()
                     .order_id(orderId)
@@ -79,6 +87,7 @@ public class DepositServiceImpl implements DepositService {
             log.info("Đã tồn tại deposit record chưa thanh toán cho order {}, không tạo mới", orderId);
         }
 
+        //Tạo request cho giao dịch
         CreatePaymentRequest request = CreatePaymentRequest.builder()
                 .orderId(orderId)
                 .amount(depositAmount)
@@ -86,6 +95,7 @@ public class DepositServiceImpl implements DepositService {
                 .purpose(MoMoPaymentPurpose.DEPOSIT)
                 .build();
 
+        //tạo giao dịch momo
         return moMoService.createPayment(request);
     }
 
@@ -140,21 +150,22 @@ public class DepositServiceImpl implements DepositService {
             }
             depositMapper.update(existingDeposit);
             log.info("Đã cập nhật deposit record cho order {} thành công với giao dịch {}", orderId, transId);
-        } else {
-            // Nếu không có deposit record, tạo mới (trường hợp hiếm)
-            PaymentMethod momoMethod = resolveMoMoPaymentMethod();
-            Deposit deposit = Deposit.builder()
-                    .order_id(orderId)
-                    .method_id(momoMethod.getMethod_id())
-                    .amount(amount != null ? BigDecimal.valueOf(amount) : BigDecimal.ZERO)
-                    .paid(Boolean.TRUE)
-                    .momo_trans_id(momoTransId)
-                    .created_at(LocalDateTime.now())
-                    .paid_at(LocalDateTime.now())
-                    .build();
-            depositMapper.insert(deposit);
-            log.info("Đã tạo mới deposit record cho order {} với giao dịch {}", orderId, transId);
         }
+//        } else {
+//            // Nếu không có deposit record, tạo mới
+//            PaymentMethod momoMethod = resolveMoMoPaymentMethod();
+//            Deposit deposit = Deposit.builder()
+//                    .order_id(orderId)
+//                    .method_id(momoMethod.getMethod_id())
+//                    .amount(amount != null ? BigDecimal.valueOf(amount) : BigDecimal.ZERO)
+//                    .paid(Boolean.TRUE)
+//                    .momo_trans_id(momoTransId)
+//                    .created_at(LocalDateTime.now())
+//                    .paid_at(LocalDateTime.now())
+//                    .build();
+//            depositMapper.insert(deposit);
+//            log.info("Đã tạo mới deposit record cho order {} với giao dịch {}", orderId, transId);
+//        }
     }
 
     //kiểm tra có cần đặt cọc ko
@@ -176,9 +187,21 @@ public class DepositServiceImpl implements DepositService {
         if (order == null) {
             throw new AppException(ErrorCode.LIST_NOT_FOUND);
         }
-        enforceOwnership(order.getUser_id()); //kiểm tra quyền truy cập
+        enforceOwnership(order.getUser_id());
         return order;
     }
+//    private Orders validateOrderOwnership(int orderId) {
+//        log.info("kiểm tra đơn hàng có tồn tại không với đơn {}", orderId);
+//        Orders order = orderMapper.findById(orderId);
+//        log.info("kết quả tìm đơn {}", order);
+//        if (order == null) {
+//            log.info("nguyên nhân do ko tìm được đơn hàng ");
+//            throw new AppException(ErrorCode.LIST_NOT_FOUND);
+//        }
+//        enforceOwnership(order.getUser_id()); //kiểm tra quyền truy cập
+//        log.info("đơn hàng có tồn tại");
+//        return order;
+//    }
 
     private void enforceOwnership(int ownerId) {
         String role = authService.getCurrentRole();
@@ -188,13 +211,13 @@ public class DepositServiceImpl implements DepositService {
         }
     }
 
-    //tính tin đặt cọc
+    //tính tien đặt cọc
     private BigDecimal calculateDepositAmount(Orders order) {
         BigDecimal discountAmount = order.getDiscount_amount() != null ? order.getDiscount_amount() : BigDecimal.ZERO;
         return order.getTotal()
                 .subtract(discountAmount) //trừ tiền giảm giá
                 .multiply(DEPOSIT_RATIO) //nhân 0.5 (đặt cọc 50%)
-                .setScale(0, RoundingMode.HALF_UP); //ko lấy phan thập phân , .5 làm tròn lên dưới .5 làm tròn xuống
+                .setScale(0, RoundingMode.HALF_UP); //scale = 0 => ko lấy phan thập phân , .5 làm tròn lên dưới .5 làm tròn xuống
     }
 
     private PaymentMethod resolveMoMoPaymentMethod() {

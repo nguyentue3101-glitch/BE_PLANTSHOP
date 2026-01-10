@@ -18,6 +18,6 @@ public interface PaymentService {
     
     // MoMo callback handling methods
     Integer extractOrderIdFromMoMoOrderId(String momoOrderId);
-    void handleDepositCallback(Integer orderId, MoMoCallbackRequest callbackRequest);
+
 }
 

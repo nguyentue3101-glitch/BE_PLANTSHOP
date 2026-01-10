@@ -34,6 +34,7 @@ public class OrderDtoResponse {
     private String shipping_name;
     private String shipping_address;
     private String shipping_phone;
+    private BigDecimal shipping_fee;
     private List<OrderDetailDtoResponse> order_details;
     private Boolean deposit_required;
     private DepositDtoResponse deposit;

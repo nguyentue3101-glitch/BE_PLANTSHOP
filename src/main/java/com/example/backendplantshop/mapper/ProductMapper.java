@@ -21,4 +21,7 @@ public interface ProductMapper {
     void restoreProduct(@Param("productID")int id);
     void updateProductQuantity(@Param("productID") int productId, @Param("quantity") int quantity);
     void restoreProductQuantity(@Param("productID") int productId, @Param("quantity") int quantity);
+
+    List<Products> getProductForPage (@Param("limit") int limit, @Param("offset") int offset);
+    int countProduct ();
 }

@@ -27,6 +27,7 @@ public class Orders {
     private String shipping_name;
     private  String shipping_address;
     private String shipping_phone;
+    private BigDecimal shipping_fee;
 
     private int user_id;
     private Integer discount_id; // Có thể null nếu không dùng discount

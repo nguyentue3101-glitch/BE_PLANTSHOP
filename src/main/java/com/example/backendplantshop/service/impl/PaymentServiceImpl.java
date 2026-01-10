@@ -37,7 +37,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentMethodMapper paymentMethodMapper;
     private final OrderMapper orderMapper;
     private final DepositService depositService;
-    
+
     @Override
     @Transactional
     public PaymentDtoResponse createPayment(PaymentDtoRequest request, int orderId) {
@@ -236,9 +236,9 @@ public class PaymentServiceImpl implements PaymentService {
         try {
             String normalized = momoOrderId.trim();
             if (normalized.startsWith("ORDER_") || normalized.startsWith("DEPOSIT_")) {
-                String[] parts = normalized.split("_");
-                if (parts.length >= 2) {
-                    return Integer.parseInt(parts[1]);
+                String[] parts = normalized.split("_"); // tách thành mảng 3 phần
+                if (parts.length >= 2) { //kiểm tra số ptu trong mảng
+                    return Integer.parseInt(parts[1]); //lấy ptu tại vị trí 1
                 }
             }
             return Integer.parseInt(normalized);
@@ -250,22 +250,23 @@ public class PaymentServiceImpl implements PaymentService {
 
 
     //hàm đánh dấu đơn hàng đã được đặt cọc hay chưa
-    @Override
-    @Transactional
-    public void handleDepositCallback(Integer orderId, MoMoCallbackRequest callbackRequest) {
-        if (orderId == null) {
-            log.warn("Không xác định được orderId cho giao dịch đặt cọc");
-            return;
-        }
-        if (callbackRequest.getResultCode() != null && callbackRequest.getResultCode() == 0) {
-            // Thanh toán thành công: cập nhật deposit record thành paid = 1
-            depositService.handleDepositSuccess(orderId, callbackRequest.getAmount(), callbackRequest.getTransId());
-        } else {
-            // Thanh toán thất bại: deposit record đã được tạo với paid = 0 khi tạo payment request
-            // Không cần làm gì thêm, deposit record đã tồn tại với paid = 0
-            log.warn("Đặt cọc thất bại cho order {}: {}. Deposit record vẫn tồn tại với paid = 0", 
-                    orderId, callbackRequest.getMessage());
-        }
-    }
+//    @Override
+//    @Transactional
+//    public void handleDepositCallback(Integer orderId, MoMoCallbackRequest callbackRequest) {
+//        if (orderId == null) {
+//            log.warn("Không xác định được orderId cho giao dịch đặt cọc");
+//            return;
+//        }
+//        if (callbackRequest.getResultCode() != null && callbackRequest.getResultCode() == 0) {
+//            // Thanh toán thành công: cập nhật deposit record thành paid = 1
+//            depositService.handleDepositSuccess(orderId, callbackRequest.getAmount(), callbackRequest.getTransId());
+//        } else {
+//            updatePaymentsByOrderId(orderId, PaymentStatus.FAILED);
+//
+//            log.info("Đã cập nhật payment status thành CANCELLED cho orderId={}", orderId);
+//            log.warn("Đặt cọc thất bại cho order {}: {}. Deposit record vẫn tồn tại với paid = 0",
+//                    orderId, callbackRequest.getMessage());
+//        }
+//    }
 }
 

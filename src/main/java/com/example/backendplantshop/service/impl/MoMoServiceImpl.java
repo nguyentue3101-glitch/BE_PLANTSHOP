@@ -50,10 +50,7 @@ public class MoMoServiceImpl implements MoMoService {
             // requestId: UUID duy nhất cho mỗi request
             String requestId = UUID.randomUUID().toString();
 
-            // orderId cho MoMo: Kết hợp orderId từ DB + timestamp để đảm bảo tính duy nhất
-            // Format: ORDER_{orderId}_{timestamp}
-            // Ví dụ: ORDER_35_1733831974000
-            // Lý do: MoMo yêu cầu orderId phải duy nhất trong hệ thống của họ
+            // MoMo yêu cầu orderId phải duy nhất trong hệ thống của họ
             // Nếu user tạo payment nhiều lần cho cùng một order, mỗi lần sẽ có orderId khác nhau
             long timestamp = System.currentTimeMillis();
             MoMoPaymentPurpose purpose = request.getPurpose() != null ? request.getPurpose() : MoMoPaymentPurpose.ORDER_PAYMENT;
@@ -70,8 +67,9 @@ public class MoMoServiceImpl implements MoMoService {
                 orderInfo = "Thanh toán đơn hàng #" + request.getOrderId();
             }
 
-            // Tạo extraData (có thể để trống hoặc JSON string)
+            // Tạo extraData
             String extraData = "purpose=" + purpose.name();
+            log.info("kiểm tra purpose name: {}", purpose.name());
 
             // Tạo raw hash (sử dụng momoOrderId cho MoMo API)
             String rawHash = MoMoUtil.createRawHash(
@@ -139,16 +137,6 @@ public class MoMoServiceImpl implements MoMoService {
                 log.error("MoMo API endpoint không được để trống");
                 throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
             }
-
-            // Tự động sửa URL nếu thiếu /create
-//            if (!apiEndpoint.endsWith("/create")) {
-//                log.warn("MoMo API endpoint thiếu /create. Tự động sửa từ: {}", apiEndpoint);
-//                // Loại bỏ dấu / ở cuối nếu có, rồi thêm /create
-//                apiEndpoint = apiEndpoint.replaceAll("/+$", "") + "/create";
-//                log.info("URL đã được sửa thành: {}", apiEndpoint);
-//            }
-
-//            log.info("MoMo API Endpoint: {}", apiEndpoint);
 
             ResponseEntity<MoMoPaymentResponse> response = restTemplate.exchange(
                     apiEndpoint,

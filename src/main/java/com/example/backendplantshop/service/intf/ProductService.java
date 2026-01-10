@@ -2,6 +2,7 @@ package com.example.backendplantshop.service.intf;
 
 import com.example.backendplantshop.dto.request.products.ProductDtoRequest;
 import com.example.backendplantshop.dto.response.ProductDtoResponse;
+import com.example.backendplantshop.dto.response.ProductPageDtoResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -16,5 +17,7 @@ public interface ProductService {
     void delete(int id);
     void restoreProduct(int id);
     List<ProductDtoResponse> getAllProductDeleted();
+
+    ProductPageDtoResponse getProductForPage (int page, int limit);
 
 }

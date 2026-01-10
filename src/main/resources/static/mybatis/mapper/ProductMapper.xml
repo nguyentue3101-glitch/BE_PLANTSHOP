@@ -45,6 +45,19 @@
         WHERE is_deleted = 0
     </select>
 
+    <select id = "getProductForPage" resultMap="ProductResultMap">
+        SELECT *
+        FROM products
+        WHERE is_deleted = 0
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countProduct" resultType="int">
+        SELECT COUNT(*)
+        FROM products
+        WHERE is_deleted = 0
+    </select>
+
     <select id="getAllProductDeleted" resultMap="ProductResultMap">
         SELECT *
         FROM products

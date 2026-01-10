@@ -4,6 +4,7 @@ import com.cloudinary.Api;
 import com.example.backendplantshop.dto.request.products.ProductDtoRequest;
 import com.example.backendplantshop.dto.response.ApiResponse;
 import com.example.backendplantshop.dto.response.ProductDtoResponse;
+import com.example.backendplantshop.dto.response.ProductPageDtoResponse;
 import com.example.backendplantshop.enums.ErrorCode;
 import com.example.backendplantshop.service.intf.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,6 +39,17 @@ public class ProductController {
                 .message(ErrorCode.CALL_API_SUCCESSFULL.getMessage())
                 .data(productService.getAllProducts())
                 .build();
+    }
+
+    @GetMapping("/getProductForPage")
+    public ApiResponse<ProductPageDtoResponse> goGetProductForPage(@RequestParam int page, @RequestParam int limit) {
+        return  ApiResponse.<ProductPageDtoResponse>builder()
+                .statusCode(ErrorCode.CALL_API_SUCCESSFULL.getCode())
+                .success(Boolean.TRUE)
+                .message(ErrorCode.CALL_API_SUCCESSFULL.getMessage())
+                .data(productService.getProductForPage(page, limit))
+                .build();
+
     }
 
     @GetMapping("/getall-deleted")

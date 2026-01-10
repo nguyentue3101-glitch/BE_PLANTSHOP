@@ -19,6 +19,7 @@
         <result column="shipping_name" property="shipping_name"/>
         <result column="shipping_address" property="shipping_address"/>
         <result column="shipping_phone" property="shipping_phone"/>
+        <result column="shipping_fee" property="shipping_fee"/>
         <result column="is_deleted" property="is_deleted"/>
     </resultMap>
 
@@ -36,6 +37,7 @@
                             shipping_name,
                             shipping_address,
                             shipping_phone,
+                            shipping_fee,
                             is_deleted)
         VALUES (#{total},
                 #{discount_amount},
@@ -50,6 +52,7 @@
                 #{shipping_name},
                 #{shipping_address},
                 #{shipping_phone},
+                #{shipping_fee},
                 #{is_deleted})
     </insert>
 
@@ -57,7 +60,7 @@
         SELECT *
         FROM orders
         WHERE order_id = #{orderID}
-        AND is_deleted = 0
+          AND is_deleted = 0
     </select>
 
 
