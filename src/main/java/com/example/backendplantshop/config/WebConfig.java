@@ -19,31 +19,31 @@ public class WebConfig implements WebMvcConfigurer {
 //        registry.addResourceHandler("/images/**") //Khai báo pattern URL.
 //                .addResourceLocations("file:" + System.getProperty("user.dir") + "/images/"); //Chỉ định thư mục vật lý chứa file.
 //    }
-    
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:3000") // Cho phép frontend
+                .allowedOrigins("https://fe-plantshop-backup.onrender.com") // Cho phép frontend
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600);
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList("https://fe-plantshop-backup.onrender.com"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
         return source;
     }
-    
+
     @Bean
     public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
