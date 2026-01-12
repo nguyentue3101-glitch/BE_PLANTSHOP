@@ -2,8 +2,11 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-COPY build/libs/backend-plantshop-0.0.1-SNAPSHOT.jar app.jar
+COPY . .
+
+RUN chmod +x gradlew
+RUN ./gradlew clean bootJar -x test
 
 EXPOSE 8080
 
-ENTRYPOINT ["java","-jar","app.jar"]
+CMD ["java", "-jar", "build/libs/backend-plantshop-0.0.1-SNAPSHOT.jar"]
