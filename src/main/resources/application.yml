@@ -83,7 +83,7 @@ mybatis:
   mapper-locations: classpath:/static/mybatis/mapper/*.xml
 
 server:
-  port: 1234
+  port: 8080
 
 logging:
   level:
