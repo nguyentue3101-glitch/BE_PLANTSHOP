@@ -2,9 +2,9 @@ spring:
   application:
     name: backend-plantshop
   datasource:
-    url: jdbc:mysql://sql100.infinityfree.com:3306/if0_40873048_XXX?useSSL=false&serverTimezone=UTC
-    username: if0_40873048
-    password: Nhi3101381
+    url: jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=true&requireSSL=true&serverTimezone=UTC
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   servlet:
