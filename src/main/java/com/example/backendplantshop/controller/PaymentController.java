@@ -215,7 +215,7 @@ public class PaymentController {
         
         // Redirect về trang chủ frontend với thông tin kết quả thanh toán trong query params
         // Frontend có thể đọc query params và hiển thị thông báo tương ứng
-        String redirectUrl = String.format("http://localhost:3000/orders-page/?paymentResult=true&orderId=%s&resultCode=%s&message=%s",
+        String redirectUrl = String.format("https://fe-plantshop-backup.onrender.com/orders-page/?paymentResult=true&orderId=%s&resultCode=%s&message=%s",
                 encodedOrderId,
                 encodedResultCode,
                 encodedMessage);
