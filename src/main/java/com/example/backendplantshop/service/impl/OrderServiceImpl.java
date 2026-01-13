@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
-    private static final int DEPOSIT_QUANTITY_THRESHOLD = 10;
+    private static final int DEPOSIT_QUANTITY_THRESHOLD = 30;
     private final OrderMapper orderMapper;
     private final OrderDetailMapper orderDetailMapper;
     private final ProductMapper productMapper;
